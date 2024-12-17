@@ -1,0 +1,96 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Schema Namespace="fiz_markerspaceModel.Store" Provider="System.Data.SqlClient" ProviderManifestToken="2012" Alias="Self" xmlns:store="http://schemas.microsoft.com/ado/2007/12/edm/EntityStoreSchemaGenerator" xmlns:customannotation="http://schemas.microsoft.com/ado/2013/11/edm/customannotation" xmlns="http://schemas.microsoft.com/ado/2009/11/edm/ssdl">
+  <EntityType Name="Machine">
+    <Key>
+      <PropertyRef Name="machine_id" />
+    </Key>
+    <Property Name="machine_id" Type="uniqueidentifier" Nullable="false" />
+    <Property Name="room_id" Type="uniqueidentifier" Nullable="false" />
+    <Property Name="machine_name" Type="varchar" MaxLength="50" Nullable="false" />
+    <Property Name="room_name" Type="varchar" MaxLength="50" Nullable="false" />
+    <Property Name="status" Type="int" Nullable="false" />
+    <Property Name="service_level" Type="float" Nullable="false" />
+    <Property Name="usage_time" Type="float" Nullable="false" />
+    <Property Name="total_usage_time" Type="float" Nullable="false" />
+    <Property Name="service_flag" Type="int" Nullable="false" />
+    <Property Name="current_threshold" Type="float" Nullable="false" />
+    <Property Name="role_access" Type="int" Nullable="false" />
+    <Property Name="hardware_service_flag" Type="int" Nullable="false" />
+  </EntityType>
+  <EntityType Name="MachineLog">
+    <Key>
+      <PropertyRef Name="machine_log_id" />
+    </Key>
+    <Property Name="machine_log_id" Type="uniqueidentifier" Nullable="false" />
+    <Property Name="user_id" Type="uniqueidentifier" Nullable="false" />
+    <Property Name="wsu_id" Type="varchar" MaxLength="50" Nullable="false" />
+    <Property Name="first_name" Type="varchar" MaxLength="50" Nullable="false" />
+    <Property Name="last_name" Type="varchar" MaxLength="50" Nullable="false" />
+    <Property Name="room_id" Type="uniqueidentifier" Nullable="false" />
+    <Property Name="room_name" Type="varchar" MaxLength="50" Nullable="false" />
+    <Property Name="machine_id" Type="uniqueidentifier" Nullable="false" />
+    <Property Name="machine_name" Type="varchar" MaxLength="50" Nullable="false" />
+    <Property Name="time_used" Type="float" Nullable="false" />
+    <Property Name="end_time_stamp" Type="varchar" MaxLength="50" Nullable="false" />
+  </EntityType>
+  <EntityType Name="Room">
+    <Key>
+      <PropertyRef Name="room_id" />
+    </Key>
+    <Property Name="room_id" Type="uniqueidentifier" Nullable="false" />
+    <Property Name="room_name" Type="varchar" MaxLength="50" Nullable="false" />
+  </EntityType>
+  <EntityType Name="RoomAccess">
+    <Key>
+      <PropertyRef Name="room_access_id" />
+    </Key>
+    <Property Name="room_access_id" Type="uniqueidentifier" Nullable="false" />
+    <Property Name="room_id" Type="uniqueidentifier" Nullable="false" />
+    <Property Name="room_name" Type="varchar" MaxLength="50" Nullable="false" />
+    <Property Name="user_id" Type="uniqueidentifier" Nullable="false" />
+    <Property Name="wsu_id" Type="varchar" MaxLength="50" Nullable="false" />
+    <Property Name="first_name" Type="varchar" MaxLength="50" Nullable="false" />
+    <Property Name="last_name" Type="varchar" MaxLength="50" Nullable="false" />
+    <Property Name="role" Type="int" Nullable="false" />
+    <Property Name="exp_level" Type="int" Nullable="false" />
+  </EntityType>
+  <EntityType Name="ServiceLog">
+    <Key>
+      <PropertyRef Name="service_id" />
+    </Key>
+    <Property Name="service_id" Type="uniqueidentifier" Nullable="false" />
+    <Property Name="user_id" Type="uniqueidentifier" Nullable="false" />
+    <Property Name="wsu_id" Type="varchar" MaxLength="50" Nullable="false" />
+    <Property Name="first_name" Type="varchar" MaxLength="50" Nullable="false" />
+    <Property Name="last_name" Type="varchar" MaxLength="50" Nullable="false" />
+    <Property Name="room_id" Type="uniqueidentifier" Nullable="false" />
+    <Property Name="room_name" Type="varchar" MaxLength="50" Nullable="false" />
+    <Property Name="machine_id" Type="uniqueidentifier" Nullable="false" />
+    <Property Name="machine_name" Type="varchar" MaxLength="50" Nullable="false" />
+    <Property Name="time_stamp" Type="varchar" MaxLength="50" Nullable="false" />
+    <Property Name="notes" Type="varchar" MaxLength="150" />
+  </EntityType>
+  <EntityType Name="User">
+    <Key>
+      <PropertyRef Name="user_id" />
+    </Key>
+    <Property Name="user_id" Type="uniqueidentifier" Nullable="false" />
+    <Property Name="wsu_id" Type="varchar" MaxLength="50" Nullable="false" />
+    <Property Name="rfid_tag" Type="varchar" MaxLength="50" Nullable="false" />
+    <Property Name="first_name" Type="varchar" MaxLength="50" Nullable="false" />
+    <Property Name="last_name" Type="varchar" MaxLength="50" Nullable="false" />
+    <Property Name="role" Type="int" Nullable="false" />
+    <Property Name="exp_level" Type="int" Nullable="false" />
+    <Property Name="password" Type="varchar" MaxLength="50" />
+    <Property Name="creation_date" Type="varchar" MaxLength="50" Nullable="false" />
+    <Property Name="est_grad_date" Type="varchar" MaxLength="50" Nullable="false" />
+  </EntityType>
+  <EntityContainer Name="fiz_markerspaceModelStoreContainer">
+    <EntitySet Name="Machine" EntityType="Self.Machine" Schema="dbo" store:Type="Tables" />
+    <EntitySet Name="MachineLog" EntityType="Self.MachineLog" Schema="dbo" store:Type="Tables" />
+    <EntitySet Name="Room" EntityType="Self.Room" Schema="dbo" store:Type="Tables" />
+    <EntitySet Name="RoomAccess" EntityType="Self.RoomAccess" Schema="dbo" store:Type="Tables" />
+    <EntitySet Name="ServiceLog" EntityType="Self.ServiceLog" Schema="dbo" store:Type="Tables" />
+    <EntitySet Name="User" EntityType="Self.User" Schema="dbo" store:Type="Tables" />
+  </EntityContainer>
+</Schema>

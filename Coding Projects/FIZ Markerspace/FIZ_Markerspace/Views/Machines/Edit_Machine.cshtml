@@ -1,0 +1,114 @@
+﻿@model dynamic
+
+@{
+    ViewBag.Title = "Create";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+
+    var machine_id = Model.Machines.machine_id;
+    var machine_name = Model.Machines.machine_name;
+    var room_name = Model.Machines.room_name;
+    var service_level = Model.Machines.service_level;
+    var current_threshold = Model.Machines.current_threshold;
+    var role_access = Model.Machines.role_access;
+
+    var set_role = "";
+    if (Model.Machines.role_access == 1) { set_role = "Student"; }
+    if (Model.Machines.role_access == 2) { set_role = "Assistant"; }
+    if (Model.Machines.role_access == 3) { set_role = "Room Mananger"; }
+    if (Model.Machines.role_access == 4) { set_role = "Admin"; }
+    if (Model.Machines.role_access == 5) { set_role = "IT"; }
+}
+
+
+<h2>Edit</h2>
+
+<form id="Edit_Machine">
+    <br />
+    <label for="machine_name">Machine Name</label>
+    <input id="machine_name" name="machine_name" class="form-control" value="@machine_name" type="text" />
+    <br />
+    <label for="room_name">Room Name</label>
+    @*<input id="room_name" name="room_name" class="form-control" placeholder="Room Name" type="text" />*@
+    <select id="room_name" name="role_access" class="form-control">
+        <option value="@room_name" selected>Current Room: @room_name</option>
+        @foreach (var room in Model.Rooms)
+        {
+            <option value="@room.room_name">@room.room_name</option>
+        }
+
+    </select>
+    <br />
+    <label for="service_level">Service Level</label>
+    <input id="service_level" name="service_level" class="form-control" value="@service_level" type="text" />
+    <br />
+    <label for="current_threshold">Current Threshold</label>
+    <input id="current_threshold" name="current_threshold" class="form-control" value="@current_threshold" type="text" />
+    <br />
+    <label for="role_access">Role Access</label>
+    <select id="role_access" name="role_access" class="form-control">
+        <option value="@role_access" selected>Selected Role: @set_role</option>
+        <option value="1">Student</option>
+        <option value="2">Assistant</option>
+        <option value="3">Room Mananger</option>
+        <option value="4">Admin</option>
+        <option value="5">IT</option>
+    </select>
+    <br />
+    <input type="button" value="Submit" data-toggle="modal" data-target="#myModal" />
+</form>
+
+
+<div>
+    @Html.ActionLink("Back to List", "View_Machines")
+</div>
+
+<script>
+    alert("WARNING: Changing Machine Name and/or Room Name will require a code update on the corresponding Raspberry Pi!")
+    $(document).ready(function () {
+        $("#submit_authentication").click(function (event) {
+            //Authentication Data
+            var AUTH_WSU_ID = $("#auth_wsu_id").val();
+            var AUTH_PASSWORD = $("#auth_password").val();
+            //User Data
+            var MACHINE_ID = "@machine_id";
+            var MACHINE_NAME = $("#machine_name").val();
+            var ROOM_NAME = $("#room_name").val();
+            var SERVICE_LEVEL = $("#service_level").val();
+            var CURRENT_THRESHOLD = $("#current_threshold").val();
+            var ROLE_ACCESS = $("#role_access").val();
+            $.ajax({
+                type: "POST",
+                url: '@Url.Action("Edit_Machine")',
+                data: JSON.stringify({
+                    //Authentication Data
+                    AUTH_WSU_ID: AUTH_WSU_ID, AUTH_PASSWORD: AUTH_PASSWORD,
+                    //Machine Data
+                    MACHINE_ID: MACHINE_ID,
+                    MACHINE_NAME: MACHINE_NAME, ROOM_NAME: ROOM_NAME, SERVICE_LEVEL: SERVICE_LEVEL,
+                    CURRENT_THRESHOLD: CURRENT_THRESHOLD, CURRENT_THRESHOLD: CURRENT_THRESHOLD,
+                    ROLE_ACCESS: ROLE_ACCESS
+                }),
+                dataType: "json",
+                contentType: "application/json; charset=utf-8",
+                success: function (data) {
+                    swal({
+                        title: "Room Updated!",
+                        text: "You updated " + MACHINE_NAME + "!",
+                        icon: "success",
+                    });
+                },
+                error: function (data) {
+                    swal({
+                        title: "Error!",
+                        text: "There was a problem updating your data, check your inputs!",
+                        icon: "warning",
+                    });
+                },
+            });
+        });
+    });
+</script>
+
+@section Scripts {
+    @Scripts.Render("~/bundles/jqueryval")
+}

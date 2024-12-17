@@ -1,0 +1,62 @@
+Updated College Football Playoff Ranking Algorithm
+Team Selection
+Automatic Bids for Power Conferences
+
+Conference champions or current leaders (for in-season rankings) receive automatic bids from the following:
+SEC (Southeastern Conference)
+Big Ten Conference
+Big 12 Conference
+ACC (Atlantic Coast Conference)
+Automatic Bid for Group of Five Conferences
+
+One team from the following conferences earns an automatic bid, determined by the highest ranking score:
+Mountain West
+MAC (Mid-American Conference)
+Conference USA
+AAC (American Athletic Conference)
+Sun Belt Conference
+At-Large Bids
+
+Seven additional teams are selected based on an at-large ranking using the defined algorithm.
+Conference Limit: No more than 3 teams from any single conference may qualify for the final 12 teams.
+Reseeding After Selection
+
+All 12 selected teams are reseeded based on their total ranking scores to finalize playoff seeding.
+Ranking Algorithm
+Each team is evaluated based on the following categories, with non-linear scoring applied as needed:
+
+Record (Max: 45 points)
+Strength of Schedule (Max: 30 points)
+Conference Ranking (Max: 20 points)
+Best Win (Max: 10 points)
+Offensive Rank (Max: 15 points)
+Tiebreakers
+Head-to-Head Results
+If two teams are tied, the team that won the head-to-head matchup receives the higher ranking.
+Strength of Conference
+If no head-to-head result is available, the team from the stronger conference receives a +3-point bonus.
+Strength of Conference Formula:
+Average Total Score of All Teams in Conference
+÷
+Number of Teams in Conference
+Average Total Score of All Teams in Conference÷Number of Teams in Conference
+Playoff Selection Process
+Calculate Scores:
+Determine total scores for all eligible teams using the ranking algorithm.
+Award Automatic Bids:
+Assign automatic bids to the Power Four conference champions and the highest-scoring Group of Five champion.
+Select At-Large Teams:
+Choose the seven highest-ranked teams not receiving automatic bids (includes potential Pac-12 teams).
+Limit: No more than three teams from any single conference can qualify.
+Resolve Ties:
+Use the tiebreaker system to resolve any ranking disputes.
+Reseeding:
+Reseed all 12 teams based on their total scores for final playoff seeding.
+Print Top 25 Rankings:
+Publish rankings for transparency and analysis.
+Objective
+This system is designed to:
+
+Ensure fairness in team selection.
+Balance conference representation.
+Reward high performance across all teams, regardless of conference.

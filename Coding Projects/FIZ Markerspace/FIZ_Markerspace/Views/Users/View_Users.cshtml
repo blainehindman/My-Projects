@@ -1,0 +1,77 @@
+﻿@model IEnumerable<FIZ_Markerspace.Models.User>
+
+@{
+    ViewBag.Title = "Users";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<h2>Users</h2>
+
+<p>
+    @Html.ActionLink("Create New", "Create_User")
+</p>
+<table class="table">
+    <tr>
+        <th>
+            @Html.DisplayNameFor(model => model.wsu_id)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.rfid_tag)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.first_name)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.last_name)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.role)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.exp_level)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.creation_date)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.est_grad_date)
+        </th>
+        <th></th>
+    </tr>
+
+@foreach (var item in Model) {
+    <tr>
+        <td>
+            @Html.DisplayFor(modelItem => item.wsu_id)
+        </td>
+        <td>
+            @Html.DisplayFor(modelItem => item.rfid_tag)
+        </td>
+        <td>
+            @Html.DisplayFor(modelItem => item.first_name)
+        </td>
+        <td>
+            @Html.DisplayFor(modelItem => item.last_name)
+        </td>
+        <td>
+            @Html.DisplayFor(modelItem => item.role)
+        </td>
+        <td>
+            @Html.DisplayFor(modelItem => item.exp_level)
+        </td>
+        <td>
+            @Html.DisplayFor(modelItem => item.creation_date)
+        </td>
+        <td>
+            @Html.DisplayFor(modelItem => item.est_grad_date)
+        </td>
+        <td>
+            @Html.ActionLink("Edit", "Edit_User", new { id = item.user_id }) |
+            @Html.ActionLink("Details", "User_Details", new { id = item.user_id }) |
+            @Html.ActionLink("Add To Room", "Add_To_Room", new { id = item.user_id }) |
+            @Html.ActionLink("Delete", "Delete_User", new { id = item.user_id })
+        </td>
+    </tr>
+}
+
+</table>

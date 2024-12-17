@@ -1,0 +1,96 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Mapping Space="C-S" xmlns="http://schemas.microsoft.com/ado/2009/11/mapping/cs">
+  <EntityContainerMapping StorageEntityContainer="fiz_markerspaceModelStoreContainer" CdmEntityContainer="fiz_markerspaceEntities">
+    <EntitySetMapping Name="Machines">
+      <EntityTypeMapping TypeName="fiz_markerspaceModel.Machine">
+        <MappingFragment StoreEntitySet="Machine">
+          <ScalarProperty Name="machine_id" ColumnName="machine_id" />
+          <ScalarProperty Name="room_id" ColumnName="room_id" />
+          <ScalarProperty Name="machine_name" ColumnName="machine_name" />
+          <ScalarProperty Name="room_name" ColumnName="room_name" />
+          <ScalarProperty Name="status" ColumnName="status" />
+          <ScalarProperty Name="service_level" ColumnName="service_level" />
+          <ScalarProperty Name="usage_time" ColumnName="usage_time" />
+          <ScalarProperty Name="total_usage_time" ColumnName="total_usage_time" />
+          <ScalarProperty Name="service_flag" ColumnName="service_flag" />
+          <ScalarProperty Name="current_threshold" ColumnName="current_threshold" />
+          <ScalarProperty Name="role_access" ColumnName="role_access" />
+          <ScalarProperty Name="hardware_service_flag" ColumnName="hardware_service_flag" />
+        </MappingFragment>
+      </EntityTypeMapping>
+    </EntitySetMapping>
+    <EntitySetMapping Name="MachineLogs">
+      <EntityTypeMapping TypeName="fiz_markerspaceModel.MachineLog">
+        <MappingFragment StoreEntitySet="MachineLog">
+          <ScalarProperty Name="machine_log_id" ColumnName="machine_log_id" />
+          <ScalarProperty Name="user_id" ColumnName="user_id" />
+          <ScalarProperty Name="wsu_id" ColumnName="wsu_id" />
+          <ScalarProperty Name="first_name" ColumnName="first_name" />
+          <ScalarProperty Name="last_name" ColumnName="last_name" />
+          <ScalarProperty Name="room_id" ColumnName="room_id" />
+          <ScalarProperty Name="room_name" ColumnName="room_name" />
+          <ScalarProperty Name="machine_id" ColumnName="machine_id" />
+          <ScalarProperty Name="machine_name" ColumnName="machine_name" />
+          <ScalarProperty Name="time_used" ColumnName="time_used" />
+          <ScalarProperty Name="end_time_stamp" ColumnName="end_time_stamp" />
+        </MappingFragment>
+      </EntityTypeMapping>
+    </EntitySetMapping>
+    <EntitySetMapping Name="Rooms">
+      <EntityTypeMapping TypeName="fiz_markerspaceModel.Room">
+        <MappingFragment StoreEntitySet="Room">
+          <ScalarProperty Name="room_id" ColumnName="room_id" />
+          <ScalarProperty Name="room_name" ColumnName="room_name" />
+        </MappingFragment>
+      </EntityTypeMapping>
+    </EntitySetMapping>
+    <EntitySetMapping Name="RoomAccesses">
+      <EntityTypeMapping TypeName="fiz_markerspaceModel.RoomAccess">
+        <MappingFragment StoreEntitySet="RoomAccess">
+          <ScalarProperty Name="room_access_id" ColumnName="room_access_id" />
+          <ScalarProperty Name="room_id" ColumnName="room_id" />
+          <ScalarProperty Name="room_name" ColumnName="room_name" />
+          <ScalarProperty Name="user_id" ColumnName="user_id" />
+          <ScalarProperty Name="wsu_id" ColumnName="wsu_id" />
+          <ScalarProperty Name="first_name" ColumnName="first_name" />
+          <ScalarProperty Name="last_name" ColumnName="last_name" />
+          <ScalarProperty Name="role" ColumnName="role" />
+          <ScalarProperty Name="exp_level" ColumnName="exp_level" />
+        </MappingFragment>
+      </EntityTypeMapping>
+    </EntitySetMapping>
+    <EntitySetMapping Name="ServiceLogs">
+      <EntityTypeMapping TypeName="fiz_markerspaceModel.ServiceLog">
+        <MappingFragment StoreEntitySet="ServiceLog">
+          <ScalarProperty Name="room_id" ColumnName="room_id" />
+          <ScalarProperty Name="service_id" ColumnName="service_id" />
+          <ScalarProperty Name="user_id" ColumnName="user_id" />
+          <ScalarProperty Name="wsu_id" ColumnName="wsu_id" />
+          <ScalarProperty Name="first_name" ColumnName="first_name" />
+          <ScalarProperty Name="last_name" ColumnName="last_name" />
+          <ScalarProperty Name="room_name" ColumnName="room_name" />
+          <ScalarProperty Name="machine_id" ColumnName="machine_id" />
+          <ScalarProperty Name="machine_name" ColumnName="machine_name" />
+          <ScalarProperty Name="time_stamp" ColumnName="time_stamp" />
+          <ScalarProperty Name="notes" ColumnName="notes" />
+        </MappingFragment>
+      </EntityTypeMapping>
+    </EntitySetMapping>
+    <EntitySetMapping Name="Users">
+      <EntityTypeMapping TypeName="fiz_markerspaceModel.User">
+        <MappingFragment StoreEntitySet="User">
+          <ScalarProperty Name="user_id" ColumnName="user_id" />
+          <ScalarProperty Name="wsu_id" ColumnName="wsu_id" />
+          <ScalarProperty Name="rfid_tag" ColumnName="rfid_tag" />
+          <ScalarProperty Name="first_name" ColumnName="first_name" />
+          <ScalarProperty Name="last_name" ColumnName="last_name" />
+          <ScalarProperty Name="role" ColumnName="role" />
+          <ScalarProperty Name="exp_level" ColumnName="exp_level" />
+          <ScalarProperty Name="password" ColumnName="password" />
+          <ScalarProperty Name="creation_date" ColumnName="creation_date" />
+          <ScalarProperty Name="est_grad_date" ColumnName="est_grad_date" />
+        </MappingFragment>
+      </EntityTypeMapping>
+    </EntitySetMapping>
+  </EntityContainerMapping>
+</Mapping>

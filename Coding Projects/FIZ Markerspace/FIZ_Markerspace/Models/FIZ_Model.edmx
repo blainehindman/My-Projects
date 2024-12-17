@@ -1,0 +1,318 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<edmx:Edmx Version="3.0" xmlns:edmx="http://schemas.microsoft.com/ado/2009/11/edmx">
+  <!-- EF Runtime content -->
+  <edmx:Runtime>
+    <!-- SSDL content -->
+    <edmx:StorageModels>
+    <Schema Namespace="fiz_markerspaceModel.Store" Provider="System.Data.SqlClient" ProviderManifestToken="2012" Alias="Self" xmlns:store="http://schemas.microsoft.com/ado/2007/12/edm/EntityStoreSchemaGenerator" xmlns:customannotation="http://schemas.microsoft.com/ado/2013/11/edm/customannotation" xmlns="http://schemas.microsoft.com/ado/2009/11/edm/ssdl">
+        <EntityType Name="Machine">
+          <Key>
+            <PropertyRef Name="machine_id" />
+          </Key>
+          <Property Name="machine_id" Type="uniqueidentifier" Nullable="false" />
+          <Property Name="room_id" Type="uniqueidentifier" Nullable="false" />
+          <Property Name="machine_name" Type="varchar" MaxLength="50" Nullable="false" />
+          <Property Name="room_name" Type="varchar" MaxLength="50" Nullable="false" />
+          <Property Name="status" Type="int" Nullable="false" />
+          <Property Name="service_level" Type="float" Nullable="false" />
+          <Property Name="usage_time" Type="float" Nullable="false" />
+          <Property Name="total_usage_time" Type="float" Nullable="false" />
+          <Property Name="service_flag" Type="int" Nullable="false" />
+          <Property Name="current_threshold" Type="float" Nullable="false" />
+          <Property Name="role_access" Type="int" Nullable="false" />
+          <Property Name="hardware_service_flag" Type="int" Nullable="false" />
+        </EntityType>
+        <EntityType Name="MachineLog">
+          <Key>
+            <PropertyRef Name="machine_log_id" />
+          </Key>
+          <Property Name="machine_log_id" Type="uniqueidentifier" Nullable="false" />
+          <Property Name="user_id" Type="uniqueidentifier" Nullable="false" />
+          <Property Name="wsu_id" Type="varchar" MaxLength="50" Nullable="false" />
+          <Property Name="first_name" Type="varchar" MaxLength="50" Nullable="false" />
+          <Property Name="last_name" Type="varchar" MaxLength="50" Nullable="false" />
+          <Property Name="room_id" Type="uniqueidentifier" Nullable="false" />
+          <Property Name="room_name" Type="varchar" MaxLength="50" Nullable="false" />
+          <Property Name="machine_id" Type="uniqueidentifier" Nullable="false" />
+          <Property Name="machine_name" Type="varchar" MaxLength="50" Nullable="false" />
+          <Property Name="time_used" Type="float" Nullable="false" />
+          <Property Name="end_time_stamp" Type="varchar" MaxLength="50" Nullable="false" />
+        </EntityType>
+        <EntityType Name="Room">
+          <Key>
+            <PropertyRef Name="room_id" />
+          </Key>
+          <Property Name="room_id" Type="uniqueidentifier" Nullable="false" />
+          <Property Name="room_name" Type="varchar" MaxLength="50" Nullable="false" />
+        </EntityType>
+        <EntityType Name="RoomAccess">
+          <Key>
+            <PropertyRef Name="room_access_id" />
+          </Key>
+          <Property Name="room_access_id" Type="uniqueidentifier" Nullable="false" />
+          <Property Name="room_id" Type="uniqueidentifier" Nullable="false" />
+          <Property Name="room_name" Type="varchar" MaxLength="50" Nullable="false" />
+          <Property Name="user_id" Type="uniqueidentifier" Nullable="false" />
+          <Property Name="wsu_id" Type="varchar" MaxLength="50" Nullable="false" />
+          <Property Name="first_name" Type="varchar" MaxLength="50" Nullable="false" />
+          <Property Name="last_name" Type="varchar" MaxLength="50" Nullable="false" />
+          <Property Name="role" Type="int" Nullable="false" />
+          <Property Name="exp_level" Type="int" Nullable="false" />
+        </EntityType>
+        <EntityType Name="ServiceLog">
+          <Key>
+            <PropertyRef Name="service_id" />
+          </Key>
+          <Property Name="service_id" Type="uniqueidentifier" Nullable="false" />
+          <Property Name="user_id" Type="uniqueidentifier" Nullable="false" />
+          <Property Name="wsu_id" Type="varchar" MaxLength="50" Nullable="false" />
+          <Property Name="first_name" Type="varchar" MaxLength="50" Nullable="false" />
+          <Property Name="last_name" Type="varchar" MaxLength="50" Nullable="false" />
+          <Property Name="room_id" Type="uniqueidentifier" Nullable="false" />
+          <Property Name="room_name" Type="varchar" MaxLength="50" Nullable="false" />
+          <Property Name="machine_id" Type="uniqueidentifier" Nullable="false" />
+          <Property Name="machine_name" Type="varchar" MaxLength="50" Nullable="false" />
+          <Property Name="time_stamp" Type="varchar" MaxLength="50" Nullable="false" />
+          <Property Name="notes" Type="varchar" MaxLength="150" />
+        </EntityType>
+        <EntityType Name="User">
+          <Key>
+            <PropertyRef Name="user_id" />
+          </Key>
+          <Property Name="user_id" Type="uniqueidentifier" Nullable="false" />
+          <Property Name="wsu_id" Type="varchar" MaxLength="50" Nullable="false" />
+          <Property Name="rfid_tag" Type="varchar" MaxLength="50" Nullable="false" />
+          <Property Name="first_name" Type="varchar" MaxLength="50" Nullable="false" />
+          <Property Name="last_name" Type="varchar" MaxLength="50" Nullable="false" />
+          <Property Name="role" Type="int" Nullable="false" />
+          <Property Name="exp_level" Type="int" Nullable="false" />
+          <Property Name="password" Type="varchar" MaxLength="50" />
+          <Property Name="creation_date" Type="varchar" MaxLength="50" Nullable="false" />
+          <Property Name="est_grad_date" Type="varchar" MaxLength="50" Nullable="false" />
+        </EntityType>
+        <EntityContainer Name="fiz_markerspaceModelStoreContainer">
+          <EntitySet Name="Machine" EntityType="Self.Machine" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="MachineLog" EntityType="Self.MachineLog" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="Room" EntityType="Self.Room" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="RoomAccess" EntityType="Self.RoomAccess" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="ServiceLog" EntityType="Self.ServiceLog" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="User" EntityType="Self.User" Schema="dbo" store:Type="Tables" />
+        </EntityContainer>
+      </Schema></edmx:StorageModels>
+    <!-- CSDL content -->
+    <edmx:ConceptualModels>
+      <Schema Namespace="fiz_markerspaceModel" Alias="Self" annotation:UseStrongSpatialTypes="false" xmlns:annotation="http://schemas.microsoft.com/ado/2009/02/edm/annotation" xmlns:customannotation="http://schemas.microsoft.com/ado/2013/11/edm/customannotation" xmlns="http://schemas.microsoft.com/ado/2009/11/edm">
+        <EntityType Name="Machine">
+          <Key>
+            <PropertyRef Name="machine_id" />
+          </Key>
+          <Property Name="machine_id" Type="Guid" Nullable="false" />
+          <Property Name="room_id" Type="Guid" Nullable="false" />
+          <Property Name="machine_name" Type="String" MaxLength="50" FixedLength="false" Unicode="false" Nullable="false" />
+          <Property Name="room_name" Type="String" MaxLength="50" FixedLength="false" Unicode="false" Nullable="false" />
+          <Property Name="status" Type="Int32" Nullable="false" />
+          <Property Name="service_level" Type="Double" Nullable="false" />
+          <Property Name="usage_time" Type="Double" Nullable="false" />
+          <Property Name="total_usage_time" Type="Double" Nullable="false" />
+          <Property Name="service_flag" Type="Int32" Nullable="false" />
+          <Property Name="current_threshold" Type="Double" Nullable="false" />
+          <Property Name="role_access" Type="Int32" Nullable="false" />
+          <Property Name="hardware_service_flag" Type="Int32" Nullable="false" />
+        </EntityType>
+        <EntityType Name="MachineLog">
+          <Key>
+            <PropertyRef Name="machine_log_id" />
+          </Key>
+          <Property Name="machine_log_id" Type="Guid" Nullable="false" />
+          <Property Name="user_id" Type="Guid" Nullable="false" />
+          <Property Name="wsu_id" Type="String" Nullable="false" MaxLength="50" Unicode="false" FixedLength="false" />
+          <Property Name="first_name" Type="String" MaxLength="50" FixedLength="false" Unicode="false" Nullable="false" />
+          <Property Name="last_name" Type="String" MaxLength="50" FixedLength="false" Unicode="false" Nullable="false" />
+          <Property Name="room_id" Type="Guid" Nullable="false" />
+          <Property Name="room_name" Type="String" MaxLength="50" FixedLength="false" Unicode="false" Nullable="false" />
+          <Property Name="machine_id" Type="Guid" Nullable="false" />
+          <Property Name="machine_name" Type="String" MaxLength="50" FixedLength="false" Unicode="false" Nullable="false" />
+          <Property Name="time_used" Type="Double" Nullable="false" />
+          <Property Name="end_time_stamp" Type="String" MaxLength="50" FixedLength="false" Unicode="false" Nullable="false" />
+        </EntityType>
+        <EntityType Name="Room">
+          <Key>
+            <PropertyRef Name="room_id" />
+          </Key>
+          <Property Name="room_id" Type="Guid" Nullable="false" />
+          <Property Name="room_name" Type="String" MaxLength="50" FixedLength="false" Unicode="false" Nullable="false" />
+        </EntityType>
+        <EntityType Name="RoomAccess">
+          <Key>
+            <PropertyRef Name="room_access_id" />
+          </Key>
+          <Property Name="room_access_id" Type="Guid" Nullable="false" />
+          <Property Name="room_id" Type="Guid" Nullable="false" />
+          <Property Name="room_name" Type="String" MaxLength="50" FixedLength="false" Unicode="false" Nullable="false" />
+          <Property Name="user_id" Type="Guid" Nullable="false" />
+          <Property Name="wsu_id" Type="String" Nullable="false" MaxLength="50" Unicode="false" FixedLength="false" />
+          <Property Name="first_name" Type="String" MaxLength="50" FixedLength="false" Unicode="false" Nullable="false" />
+          <Property Name="last_name" Type="String" MaxLength="50" FixedLength="false" Unicode="false" Nullable="false" />
+          <Property Name="role" Type="Int32" Nullable="false" />
+          <Property Name="exp_level" Type="Int32" Nullable="false" />
+        </EntityType>
+        <EntityType Name="ServiceLog">
+          <Key>
+            <PropertyRef Name="service_id" />
+          </Key>
+          <Property Name="service_id" Type="Guid" Nullable="false" />
+          <Property Name="user_id" Type="Guid" Nullable="false" />
+          <Property Name="wsu_id" Type="String" Nullable="false" MaxLength="50" Unicode="false" FixedLength="false" />
+          <Property Name="first_name" Type="String" MaxLength="50" FixedLength="false" Unicode="false" Nullable="false" />
+          <Property Name="last_name" Type="String" MaxLength="50" FixedLength="false" Unicode="false" Nullable="false" />
+          <Property Name="room_name" Type="String" MaxLength="50" FixedLength="false" Unicode="false" Nullable="false" />
+          <Property Name="machine_id" Type="Guid" Nullable="false" />
+          <Property Name="machine_name" Type="String" MaxLength="50" FixedLength="false" Unicode="false" Nullable="false" />
+          <Property Name="time_stamp" Type="String" MaxLength="50" FixedLength="false" Unicode="false" Nullable="false" />
+          <Property Name="notes" Type="String" MaxLength="150" FixedLength="false" Unicode="false" />
+          <Property Name="room_id" Type="Guid" Nullable="false" />
+        </EntityType>
+        <EntityType Name="User">
+          <Key>
+            <PropertyRef Name="user_id" />
+          </Key>
+          <Property Name="user_id" Type="Guid" Nullable="false" />
+          <Property Name="wsu_id" Type="String" Nullable="false" MaxLength="50" Unicode="false" FixedLength="false" />
+          <Property Name="rfid_tag" Type="String" Nullable="false" MaxLength="50" Unicode="false" FixedLength="false" />
+          <Property Name="first_name" Type="String" MaxLength="50" FixedLength="false" Unicode="false" Nullable="false" />
+          <Property Name="last_name" Type="String" MaxLength="50" FixedLength="false" Unicode="false" Nullable="false" />
+          <Property Name="role" Type="Int32" Nullable="false" />
+          <Property Name="exp_level" Type="Int32" Nullable="false" />
+          <Property Name="password" Type="String" MaxLength="50" FixedLength="false" Unicode="false" />
+          <Property Name="creation_date" Type="String" MaxLength="50" FixedLength="false" Unicode="false" Nullable="false" />
+          <Property Name="est_grad_date" Type="String" MaxLength="50" FixedLength="false" Unicode="false" Nullable="false" />
+        </EntityType>
+        <EntityContainer Name="fiz_markerspaceEntities" annotation:LazyLoadingEnabled="true">
+          <EntitySet Name="Machines" EntityType="Self.Machine" />
+          <EntitySet Name="MachineLogs" EntityType="Self.MachineLog" />
+          <EntitySet Name="Rooms" EntityType="Self.Room" />
+          <EntitySet Name="RoomAccesses" EntityType="Self.RoomAccess" />
+          <EntitySet Name="ServiceLogs" EntityType="Self.ServiceLog" />
+          <EntitySet Name="Users" EntityType="Self.User" />
+        </EntityContainer>
+      </Schema>
+    </edmx:ConceptualModels>
+    <!-- C-S mapping content -->
+    <edmx:Mappings>
+      <Mapping Space="C-S" xmlns="http://schemas.microsoft.com/ado/2009/11/mapping/cs">
+        <EntityContainerMapping StorageEntityContainer="fiz_markerspaceModelStoreContainer" CdmEntityContainer="fiz_markerspaceEntities">
+          <EntitySetMapping Name="Machines">
+            <EntityTypeMapping TypeName="fiz_markerspaceModel.Machine">
+              <MappingFragment StoreEntitySet="Machine">
+                <ScalarProperty Name="machine_id" ColumnName="machine_id" />
+                <ScalarProperty Name="room_id" ColumnName="room_id" />
+                <ScalarProperty Name="machine_name" ColumnName="machine_name" />
+                <ScalarProperty Name="room_name" ColumnName="room_name" />
+                <ScalarProperty Name="status" ColumnName="status" />
+                <ScalarProperty Name="service_level" ColumnName="service_level" />
+                <ScalarProperty Name="usage_time" ColumnName="usage_time" />
+                <ScalarProperty Name="total_usage_time" ColumnName="total_usage_time" />
+                <ScalarProperty Name="service_flag" ColumnName="service_flag" />
+                <ScalarProperty Name="current_threshold" ColumnName="current_threshold" />
+                <ScalarProperty Name="role_access" ColumnName="role_access" />
+                <ScalarProperty Name="hardware_service_flag" ColumnName="hardware_service_flag" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="MachineLogs">
+            <EntityTypeMapping TypeName="fiz_markerspaceModel.MachineLog">
+              <MappingFragment StoreEntitySet="MachineLog">
+                <ScalarProperty Name="machine_log_id" ColumnName="machine_log_id" />
+                <ScalarProperty Name="user_id" ColumnName="user_id" />
+                <ScalarProperty Name="wsu_id" ColumnName="wsu_id" />
+                <ScalarProperty Name="first_name" ColumnName="first_name" />
+                <ScalarProperty Name="last_name" ColumnName="last_name" />
+                <ScalarProperty Name="room_id" ColumnName="room_id" />
+                <ScalarProperty Name="room_name" ColumnName="room_name" />
+                <ScalarProperty Name="machine_id" ColumnName="machine_id" />
+                <ScalarProperty Name="machine_name" ColumnName="machine_name" />
+                <ScalarProperty Name="time_used" ColumnName="time_used" />
+                <ScalarProperty Name="end_time_stamp" ColumnName="end_time_stamp" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="Rooms">
+            <EntityTypeMapping TypeName="fiz_markerspaceModel.Room">
+              <MappingFragment StoreEntitySet="Room">
+                <ScalarProperty Name="room_id" ColumnName="room_id" />
+                <ScalarProperty Name="room_name" ColumnName="room_name" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="RoomAccesses">
+            <EntityTypeMapping TypeName="fiz_markerspaceModel.RoomAccess">
+              <MappingFragment StoreEntitySet="RoomAccess">
+                <ScalarProperty Name="room_access_id" ColumnName="room_access_id" />
+                <ScalarProperty Name="room_id" ColumnName="room_id" />
+                <ScalarProperty Name="room_name" ColumnName="room_name" />
+                <ScalarProperty Name="user_id" ColumnName="user_id" />
+                <ScalarProperty Name="wsu_id" ColumnName="wsu_id" />
+                <ScalarProperty Name="first_name" ColumnName="first_name" />
+                <ScalarProperty Name="last_name" ColumnName="last_name" />
+                <ScalarProperty Name="role" ColumnName="role" />
+                <ScalarProperty Name="exp_level" ColumnName="exp_level" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="ServiceLogs">
+            <EntityTypeMapping TypeName="fiz_markerspaceModel.ServiceLog">
+              <MappingFragment StoreEntitySet="ServiceLog">
+                <ScalarProperty Name="room_id" ColumnName="room_id" />
+                <ScalarProperty Name="service_id" ColumnName="service_id" />
+                <ScalarProperty Name="user_id" ColumnName="user_id" />
+                <ScalarProperty Name="wsu_id" ColumnName="wsu_id" />
+                <ScalarProperty Name="first_name" ColumnName="first_name" />
+                <ScalarProperty Name="last_name" ColumnName="last_name" />
+                <ScalarProperty Name="room_name" ColumnName="room_name" />
+                <ScalarProperty Name="machine_id" ColumnName="machine_id" />
+                <ScalarProperty Name="machine_name" ColumnName="machine_name" />
+                <ScalarProperty Name="time_stamp" ColumnName="time_stamp" />
+                <ScalarProperty Name="notes" ColumnName="notes" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="Users">
+            <EntityTypeMapping TypeName="fiz_markerspaceModel.User">
+              <MappingFragment StoreEntitySet="User">
+                <ScalarProperty Name="user_id" ColumnName="user_id" />
+                <ScalarProperty Name="wsu_id" ColumnName="wsu_id" />
+                <ScalarProperty Name="rfid_tag" ColumnName="rfid_tag" />
+                <ScalarProperty Name="first_name" ColumnName="first_name" />
+                <ScalarProperty Name="last_name" ColumnName="last_name" />
+                <ScalarProperty Name="role" ColumnName="role" />
+                <ScalarProperty Name="exp_level" ColumnName="exp_level" />
+                <ScalarProperty Name="password" ColumnName="password" />
+                <ScalarProperty Name="creation_date" ColumnName="creation_date" />
+                <ScalarProperty Name="est_grad_date" ColumnName="est_grad_date" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+        </EntityContainerMapping>
+      </Mapping>
+    </edmx:Mappings>
+  </edmx:Runtime>
+  <!-- EF Designer content (DO NOT EDIT MANUALLY BELOW HERE) -->
+  <Designer xmlns="http://schemas.microsoft.com/ado/2009/11/edmx">
+    <Connection>
+      <DesignerInfoPropertySet>
+        <DesignerProperty Name="MetadataArtifactProcessing" Value="EmbedInOutputAssembly" />
+      </DesignerInfoPropertySet>
+    </Connection>
+    <Options>
+      <DesignerInfoPropertySet>
+        <DesignerProperty Name="ValidateOnBuild" Value="true" />
+        <DesignerProperty Name="EnablePluralization" Value="true" />
+        <DesignerProperty Name="IncludeForeignKeysInModel" Value="true" />
+        <DesignerProperty Name="UseLegacyProvider" Value="false" />
+        <DesignerProperty Name="CodeGenerationStrategy" Value="None" />
+      </DesignerInfoPropertySet>
+    </Options>
+    <!-- Diagram content (shape and connector positions) -->
+    <Diagrams></Diagrams>
+  </Designer>
+</edmx:Edmx>

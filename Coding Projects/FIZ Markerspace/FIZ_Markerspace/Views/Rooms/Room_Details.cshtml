@@ -1,0 +1,97 @@
+﻿@*@model FIZ_Markerspace.Models.Room*@
+@model dynamic
+
+@{
+    ViewBag.Title = "Details";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<h3>Details</h3>
+<table class="table">
+    <tr>
+        <th>
+            Room ID
+        </th>
+        <th>
+            Room Name
+        </th>
+    </tr>
+    @foreach (var item in Model.Room)
+    {
+        <tr>
+            <td>
+                @item.room_id
+            </td>
+            <td>
+                @item.room_name
+            </td>
+        </tr>
+    }
+</table>
+
+
+<br />
+<hr />
+<br />
+<br />
+
+<h3>Room Access</h3>
+<table class="table">
+    <tr>
+        <th>
+            WSU ID
+        </th>
+        <th>
+            First Name
+        </th>
+        <th>
+            Last Name
+        </th>
+    </tr>
+    @foreach (var item in Model.Room_Access)
+    {
+        <tr>
+            <td>
+                @item.wsu_id
+            </td>
+            <td>
+                @item.first_name
+            </td>
+            <td>
+                @item.last_name
+            </td>
+            <td>
+                @Html.ActionLink("Remove", "Remove_Room_Access", new { id = item.user_id, r_id = item.room_id })
+            </td>
+        </tr>
+    }
+</table>
+
+@*<div>
+        <h4>Room</h4>
+        <hr />
+        <dl class="dl-horizontal">
+            <dt>
+                @Html.DisplayNameFor(mode => model.room_id)
+                Room ID
+            </dt>
+
+            <dd>
+                @Html.DisplayFor(model => model.room_id)
+            </dd>
+
+            <dt>
+                @Html.DisplayNameFor(model => model.room_name)
+            </dt>
+
+            <dd>
+                @Html.DisplayFor(model => model.room_name)
+            </dd>
+
+        </dl>
+    </div>*@
+
+<p>
+    @*@Html.ActionLink("Edit", "Edit_Room", new { id = Model.Room.room_id })*@ |
+    @Html.ActionLink("Back to List", "View_Rooms")
+</p>

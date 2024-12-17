@@ -1,0 +1,90 @@
+﻿@model dynamic
+
+@{
+    ViewBag.Title = "Add To Room";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+
+    var user_id = Model.User.user_id;
+    var wsu_id = Model.User.wsu_id;
+    var first_name = Model.User.first_name;
+    var last_name = Model.User.last_name;
+    var role = Model.User.role;
+    var exp_level = Model.User.exp_level;
+}
+
+<h2>Add To Room</h2>
+
+<p>Select a room for @first_name to have machine access</p>
+
+<form id="Add_To_Room">
+    <label for="room_name">Room Name</label>
+    <select id="room_name" name="room_name" class="form-control">
+        <option value="" disabled selected>Select Room</option>
+        @foreach (var room in Model.Rooms)
+        {
+            <option value="@room.room_name">@room.room_name</option>
+        }
+    </select>
+    <br />
+    <input type="button" value="Submit" data-toggle="modal" data-target="#myModal" />
+</form>
+
+<script>
+    $(document).ready(function () {
+        $("#submit_authentication").click(function (event) {
+            //Authentication Data
+            var AUTH_WSU_ID = $("#auth_wsu_id").val();
+            var AUTH_PASSWORD = $("#auth_password").val();
+            //User Data
+            var USER_ID = "@user_id";
+            var WSU_ID = "@wsu_id";
+            var FIRST_NAME = "@first_name";
+            var LAST_NAME = "@last_name";
+            var ROLE = @role;
+            var EXP_LEVEL = @exp_level;
+            var ROOM_NAME = $("#room_name").val();
+            $.ajax({
+                type: "POST",
+                url: '@Url.Action("Add_To_Room")',
+                data: JSON.stringify({
+                    //Authentication Data
+                    AUTH_WSU_ID: AUTH_WSU_ID, AUTH_PASSWORD: AUTH_PASSWORD,
+                    //User Data
+                    USER_ID: USER_ID, WSU_ID: WSU_ID, FIRST_NAME: FIRST_NAME,
+                    LAST_NAME: LAST_NAME, ROLE: ROLE, EXP_LEVEL: EXP_LEVEL,
+                    ROOM_NAME: ROOM_NAME,
+                }),
+                dataType: "json",
+                contentType: "application/json; charset=utf-8",
+                success: function (return_data) {
+                    if (return_data.result == true) {
+                        swal({
+                            title: "User Added!",
+                            text: return_data.message,
+                            icon: "success",
+                        });
+                    }
+                    if (return_data.result == false) {
+                        swal({
+                            title: "Error!",
+                            text: return_data.message,
+                            icon: "warning",
+                        });
+                    }
+                },
+                error: function (return_data) {
+                    swal({
+                        title: "Error!",
+                        text: "There was a problem submitting your data, check your inputs!",
+                        icon: "warning",
+                    });
+                },
+            });
+        });
+    });
+</script>
+
+@section Scripts {
+    @Scripts.Render("~/bundles/jqueryval")
+}
+

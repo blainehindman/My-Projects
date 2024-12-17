@@ -1,0 +1,132 @@
+﻿@model FIZ_Markerspace.Models.User
+
+@{
+    ViewBag.Title = "Edit";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    var user_id = Model.user_id;
+    var wsu_id = Model.wsu_id;
+    var rfid_tag = Model.rfid_tag;
+    var first_name = Model.first_name;
+    var last_name = Model.last_name;
+    var role = Model.role;
+    var exp_level = Model.exp_level;
+    var password = Model.password;
+    var creation_date = Model.creation_date;
+    var est_grad_date = Model.est_grad_date;
+
+    var set_role = "";
+    if (Model.role == 1) { set_role = "Student"; }
+    if (Model.role == 2) { set_role = "Assistant"; }
+    if (Model.role == 3) { set_role = "Room Mananger"; }
+    if (Model.role == 4) { set_role = "Admin"; }
+    if (Model.role == 5) { set_role = "IT"; }
+}
+
+<h2>Edit</h2>
+
+<form id="Edit_User">
+    <br />
+    <label for="wsu_id">WSU ID</label>
+    <input id="wsu_id" name="wsu_id" value="@wsu_id" class="form-control" type="text" />
+    <br />
+    <label for="rfid_tag">RFID</label>
+    <input id="rfid_tag" name="rfid_tag" value="@rfid_tag" class="form-control" type="text" />
+    <br />
+    <label for="first_name">First Name</label>
+    <input id="first_name" name="first_name" value="@first_name" class="form-control" type="text" />
+    <br />
+    <label for="last_name">Last Name</label>
+    <input id="last_name" name="last_name" value="@last_name"  class="form-control" type="text" />
+    <br />
+    <label for="role">Role</label>
+    <select id="role" name="role" class="form-control">
+        <option value="@role" selected>Selected Role: @set_role</option>
+        <option value="1">Student</option>
+        <option value="2">Assistant</option>
+        <option value="3">Room Mananger</option>
+        <option value="4">Admin</option>
+        <option value="5">IT</option>
+    </select>
+    <br />
+    <label for="exp_level">Experience Level</label>
+    <select id="exp_level" name="exp_level" class="form-control">
+        <option value="@exp_level" selected>Selected Level: @exp_level</option>
+        <option value="1">1</option>
+        <option value="2">2</option>
+        <option value="3">3</option>
+        <option value="4">4</option>
+        <option value="5">5</option>
+    </select>
+    <br />
+    <label for="password">Password</label>
+    <input id="password" name="password" value="@password" class="form-control" type="password" />
+    <br />
+    <label for="creation_date">Creation Date</label>
+    <input id="creation_date" name="creation_date" value="@creation_date" class="form-control" type="date" />
+    <br />
+    <label for="est_grad_date">Estimated Graduation Date</label>
+    <input id="est_grad_date" name="est_grad_date" value="@est_grad_date" class="form-control" type="date" />
+    <br />
+    <input type="button" value="Submit" data-toggle="modal" data-target="#myModal" />
+</form>
+
+<div>
+    @Html.ActionLink("Back to List", "View_Users")
+</div>
+
+<script>
+    $(document).ready(function () {
+        $("#submit_authentication").click(function (event) {
+            //Authentication Data
+            var AUTH_WSU_ID = $("#auth_wsu_id").val();
+            var AUTH_PASSWORD = $("#auth_password").val();
+            //User Data
+            var USER_ID = "@user_id";
+            var WSU_ID = $("#wsu_id").val();
+            var RFID_TAG = $("#rfid_tag").val();
+            var FIRST_NAME = $("#first_name").val();
+            var LAST_NAME = $("#last_name").val();
+            var ROLE = $("#role").val();
+            var EXP_LEVEL = $("#exp_level").val();
+            var PASSWORD = $("#password").val();
+            var CREATION_DATE = $("#creation_date").val();
+            var EST_GRAD_DATE = $("#est_grad_date").val();
+
+            $.ajax({
+                type: "POST",
+                url: '@Url.Action("Edit_User")',
+                data: JSON.stringify({
+                    //Authentication Data
+                    AUTH_WSU_ID: AUTH_WSU_ID, AUTH_PASSWORD: AUTH_PASSWORD,
+                    //User Data
+                    USER_ID: USER_ID,
+                    WSU_ID: WSU_ID, RFID_TAG: RFID_TAG, FIRST_NAME: FIRST_NAME,
+                    LAST_NAME: LAST_NAME, ROLE: ROLE, EXP_LEVEL: EXP_LEVEL,
+                    PASSWORD: PASSWORD, CREATION_DATE: CREATION_DATE,
+                    EST_GRAD_DATE: EST_GRAD_DATE
+                }),
+                dataType: "json",
+                contentType: "application/json; charset=utf-8",
+                success: function (data) {
+                    swal({
+                        title: "User Updated!",
+                        text: "You updated " + FIRST_NAME + " " + LAST_NAME + "!",
+                        icon: "success",
+                    });
+                },
+                error: function (data) {
+                    swal({
+                        title: "Error!",
+                        text: "There was a problem updating your data, check your inputs!",
+                        icon: "warning",
+                    });
+                },
+            });
+        });
+    });
+</script>
+
+@section Scripts {
+    @Scripts.Render("~/bundles/jqueryval")
+}
+

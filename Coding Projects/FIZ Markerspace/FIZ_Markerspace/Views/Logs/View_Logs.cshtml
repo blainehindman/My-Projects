@@ -1,0 +1,124 @@
+﻿@model dynamic
+
+@{
+    ViewBag.Title = "View Logs";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<h2>View Logs</h2>
+<br />
+<br />
+
+<h3>Machine Logs</h3>
+<table class="table">
+    <tr>
+        <th>
+            WSU ID
+        </th>
+        <th>
+            First Name
+        </th>
+        <th>
+            Last Name
+        </th>
+        <th>
+            Room Name
+        </th>
+        <th>
+            Machine Name
+        </th>
+        <th>
+            Time Stamp
+        </th>
+        <th>
+        </th>
+    </tr>
+
+    @foreach (var item in Model.Machine_Logs)
+    {
+        <tr>
+            <td>
+                @item.wsu_id
+            </td>
+            <td>
+                @item.first_name
+            </td>
+            <td>
+                @item.last_name
+            </td>
+            <td>
+                @item.room_name
+            </td>
+            <td>
+                @item.machine_name
+            </td>
+            <td>
+                @item.end_time_stamp
+            </td>
+            <td>
+                @Html.ActionLink("Details", "Machine_Log_Details", new { id = item.machine_log_id }) |
+                @Html.ActionLink("Remove", "Remove_Machine_Log", new { id = item.machine_log_id })
+            </td>
+        </tr>
+    }
+
+</table>
+<br />
+<hr />
+<br />
+<br />
+
+<h3>Service Logs</h3>
+<table class="table">
+    <tr>
+        <th>
+            WSU ID
+        </th>
+        <th>
+            First Name
+        </th>
+        <th>
+            Last Name
+        </th>
+        <th>
+            Room Name
+        </th>
+        <th>
+            Machine Name
+        </th>
+        <th>
+            Time Stamp
+        </th>
+        <th>
+        </th>
+    </tr>
+
+    @foreach (var item in Model.Service_Logs)
+    {
+        <tr>
+            <td>
+                @item.wsu_id
+            </td>
+            <td>
+                @item.first_name
+            </td>
+            <td>
+                @item.last_name
+            </td>
+            <td>
+                @item.room_name
+            </td>
+            <td>
+                @item.machine_name
+            </td>
+            <td>
+                @item.time_stamp
+            </td>
+            <td>
+                @Html.ActionLink("Details", "Service_Log_Details", new { id = item.service_id }) |
+                @Html.ActionLink("Remove", "Remove_Service_Log", new { id = item.service_id })
+            </td>
+        </tr>
+    }
+
+</table>

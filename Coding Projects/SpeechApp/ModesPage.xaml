@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="SpeechApp.ModesPage"
+             Title="Modes">
+
+    <ScrollView>
+        <VerticalStackLayout Padding="30,0" Spacing="25">
+            <!--<Label
+                Text="Modes"
+                Style="{StaticResource Headline}"
+                SemanticProperties.HeadingLevel="Level1" />-->
+
+            <Grid ColumnDefinitions="*, *" Padding="0,30,0,30" ColumnSpacing="10">
+                <!-- First Frame (Talk To) -->
+                <Frame BackgroundColor="DarkOliveGreen" Grid.Column="0" Padding="0" BorderColor="Transparent"
+                       WidthRequest="140" HeightRequest="140">
+                    <Grid RowDefinitions="*, Auto">
+                        <!-- Large Icon in Center -->
+                        <Image HorizontalOptions="Center" VerticalOptions="Center"
+                               WidthRequest="60" HeightRequest="60">
+                            <Image.Source>
+                                <FontImageSource>
+                                    <FontImageSource.Glyph>
+                                        <OnPlatform x:TypeArguments="x:String">
+                                            <!-- SF Symbol for voice recognition (iOS/macOS) -->
+                                            <On Platform="iOS" Value="waveform" />
+                                            <On Platform="macOS" Value="waveform" />
+
+                                            <!-- Material Icon for headset_mic (Android/WinUI) -->
+                                            <On Platform="Android" Value="&#xe311;" />
+                                            <On Platform="WinUI" Value="&#xe311;" />
+                                        </OnPlatform>
+                                    </FontImageSource.Glyph>
+
+                                    <FontImageSource.FontFamily>
+                                        <OnPlatform x:TypeArguments="x:String">
+                                            <!-- SF Symbol for psychology (iOS/macOS) -->
+                                            <On Platform="iOS" Value="brain.head.profile" />
+                                            <On Platform="macOS" Value="brain.head.profile" />
+
+                                            <!-- Use Material Icons on Android/WinUI -->
+                                            <On Platform="Android" Value="MaterialIconsOutlined" />
+                                            <On Platform="WinUI" Value="MaterialIconsOutlined" />
+                                        </OnPlatform>
+                                    </FontImageSource.FontFamily>
+                                </FontImageSource>
+                            </Image.Source>
+                        </Image>
+
+                        <!-- Label at Bottom Left -->
+                        <Label
+                            Text="Talk To"
+                            Style="{StaticResource ModeText}"
+                            />
+                    </Grid>
+
+                    <!-- Add TapGestureRecognizer to the Frame -->
+                    <Frame.GestureRecognizers>
+                        <TapGestureRecognizer Tapped="OnTalkToClicked" />
+                    </Frame.GestureRecognizers>
+                </Frame>
+
+                <!-- Second Frame (Impromptu) -->
+                <Frame BackgroundColor="BlueViolet" Grid.Column="1" Padding="0" BorderColor="Transparent"
+                       WidthRequest="140" HeightRequest="140">
+                    <Grid RowDefinitions="*, Auto">
+                        <!-- Large Icon in Center -->
+                        <Image HorizontalOptions="Center" VerticalOptions="Center"
+                               WidthRequest="60" HeightRequest="60">
+                            <Image.Source>
+                                <FontImageSource>
+                                    <FontImageSource.Glyph>
+                                        <OnPlatform x:TypeArguments="x:String">
+                                            <!-- SF Symbol for psychology (iOS/macOS) -->
+                                            <On Platform="iOS" Value="brain.head.profile" />
+                                            <On Platform="macOS" Value="brain.head.profile" />
+
+                                            <!-- Material Icon for psychology_alt (Android/WinUI) -->
+                                            <On Platform="Android" Value="&#xf8ea;" />
+                                            <On Platform="WinUI" Value="&#xf8ea;" />
+                                        </OnPlatform>
+                                    </FontImageSource.Glyph>
+
+                                    <FontImageSource.FontFamily>
+                                        <OnPlatform x:TypeArguments="x:String">
+                                            <!-- Use SF Symbols on iOS/macOS -->
+                                            <On Platform="iOS" Value="SF Symbols" />
+                                            <On Platform="macOS" Value="SF Symbols" />
+
+                                            <!-- Use Material Icons on Android/WinUI -->
+                                            <On Platform="Android" Value="MaterialIconsOutlined" />
+                                            <On Platform="WinUI" Value="MaterialIconsOutlined" />
+                                        </OnPlatform>
+                                    </FontImageSource.FontFamily>
+                                </FontImageSource>
+                            </Image.Source>
+                        </Image>
+
+                        <!-- Label at Bottom Left -->
+                        <Label
+                            Text="Impromptu"
+                            Style="{StaticResource ModeText}"
+                            />
+                    </Grid>
+                </Frame>
+            </Grid>
+
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

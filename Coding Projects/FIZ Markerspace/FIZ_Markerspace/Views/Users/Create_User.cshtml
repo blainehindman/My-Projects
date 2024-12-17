@@ -1,0 +1,125 @@
+﻿@model FIZ_Markerspace.Models.User
+
+@{
+    ViewBag.Title = "Create";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<h2>Create</h2>
+
+<form id="Create_User">
+    <br />
+    <label for="wsu_id">WSU ID</label>
+    <input id="wsu_id" name="wsu_id" class="form-control" placeholder="WSU ID" type="text" />
+    <br />
+    <label for="rfid_tag">RFID</label>
+    <input id="rfid_tag" name="rfid_tag" class="form-control" placeholder="RFID Tag" type="text" />
+    <br />
+    <label for="first_name">First Name</label>
+    <input id="first_name" name="first_name" class="form-control" placeholder="First Name" type="text" />
+    <br />
+    <label for="last_name">Last Name</label>
+    <input id="last_name" name="last_name" class="form-control" placeholder="Last Name" type="text" />
+    <br />
+    <label for="role">Role</label>
+    <select id="role" name="role" class="form-control">
+        <option value="" disabled selected>Select Role</option>
+        <option value="1">Student</option>
+        <option value="2">Assistant</option>
+        <option value="3">Room Mananger</option>
+        <option value="4">Admin</option>
+        <option value="5">IT</option>
+    </select>
+    <br />
+    <label for="exp_level">Experience Level</label>
+    <select id="exp_level" name="exp_level" class="form-control">
+        <option value="" disabled selected>Select Experience Level</option>
+        <option value="1">1</option>
+        <option value="2">2</option>
+        <option value="3">3</option>
+        <option value="4">4</option>
+        <option value="5">5</option>
+    </select>
+    <br />
+    <label for="password">Password</label>
+    <input id="password" name="password" class="form-control" placeholder="Password" type="password" />
+    <br />
+    <label for="creation_date">Creation Date</label>
+    <input id="creation_date" name="creation_date" class="form-control" type="date" />
+    <br />
+    <label for="est_grad_date">Estimated Graduation Date</label>
+    <input id="est_grad_date" class="form-control" type="date" />
+    <br />
+    <input type="button" value="Submit" data-toggle="modal" data-target="#myModal" />
+</form>
+
+<div>
+    @Html.ActionLink("Back to List", "View_Users")
+</div>
+
+<script>
+    $(document).ready(function () {
+        $("#submit_authentication").click(function (event) {
+            //Authentication Data
+            var AUTH_WSU_ID = $("#auth_wsu_id").val();
+            var AUTH_PASSWORD = $("#auth_password").val();
+            //User Data
+            var WSU_ID = $("#wsu_id").val();
+            var RFID_TAG = $("#rfid_tag").val();
+            var FIRST_NAME = $("#first_name").val();
+            var LAST_NAME = $("#last_name").val();
+            var ROLE = $("#role").val();
+            var EXP_LEVEL = $("#exp_level").val();
+            var PASSWORD = $("#password").val();
+            var CREATION_DATE = $("#creation_date").val();
+            var EST_GRAD_DATE = $("#est_grad_date").val();
+            
+            $.ajax({
+                type: "POST",
+                url: '@Url.Action("Create_User")',
+                data: JSON.stringify({
+                    //Authentication Data
+                    AUTH_WSU_ID: AUTH_WSU_ID, AUTH_PASSWORD: AUTH_PASSWORD,
+                    //User Data
+                    WSU_ID: WSU_ID, RFID_TAG: RFID_TAG, FIRST_NAME: FIRST_NAME,
+                    LAST_NAME: LAST_NAME, ROLE: ROLE, EXP_LEVEL: EXP_LEVEL,
+                    PASSWORD: PASSWORD, CREATION_DATE: CREATION_DATE,
+                    EST_GRAD_DATE: EST_GRAD_DATE
+                }),
+                dataType: "json",
+                contentType: "application/json; charset=utf-8",
+                success: function (return_data) {
+                    if (return_data.result == true) {
+                        swal({
+                            title: "User Added!",
+                            text: return_data.message,
+                            icon: "success",
+                        });
+                        alert("Success!");
+                    }
+                    if (return_data.result == false) {
+                        swal({
+                            title: "Error!",
+                            text: return_data.message,
+                            icon: "warning",
+                        });
+                        alert("Error!");
+                    }
+                },
+                error: function (return_data) {
+                    swal({
+                        title: "Error!",
+                        text: "There was a problem submitting your data, check your inputs!",
+                        icon: "warning",
+                    });
+                    alert("Error!");
+                },
+            });
+        });
+    });
+</script>
+
+@section Scripts {
+    @Scripts.Render("~/bundles/jqueryval")
+}
+

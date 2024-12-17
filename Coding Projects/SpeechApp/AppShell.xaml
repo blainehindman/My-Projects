@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<Shell
+    x:Class="SpeechApp.AppShell"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:local="clr-namespace:SpeechApp"
+    Shell.FlyoutBehavior="Disabled"
+    Title="SpeechApp">
+
+    <TabBar>
+        <!-- Home Tab -->
+        <Tab Title="Home">
+            <Tab.Icon>
+                <FontImageSource>
+                    <FontImageSource.Glyph>
+                        <OnPlatform x:TypeArguments="x:String">
+                            <!-- SF Symbol for house on iOS/macOS -->
+                            <On Platform="iOS" Value="house" />
+                            <On Platform="macOS" Value="house" />
+
+                            <!-- Material Icon for home on Android/WinUI -->
+                            <On Platform="Android" Value="&#xE88A;" />
+                            <!-- Material Home Icon -->
+                            <On Platform="WinUI" Value="&#xE88A;" />
+                        </OnPlatform>
+                    </FontImageSource.Glyph>
+
+                    <FontImageSource.FontFamily>
+                        <OnPlatform x:TypeArguments="x:String">
+                            <!-- Use SF Symbols on iOS/macOS -->
+                            <On Platform="iOS" Value="SF Symbols" />
+                            <On Platform="macOS" Value="SF Symbols" />
+
+                            <!-- Use Material Icons on Android/WinUI -->
+                            <On Platform="Android" Value="MaterialIcons" />
+                            <On Platform="WinUI" Value="MaterialIcons" />
+                        </OnPlatform>
+                    </FontImageSource.FontFamily>
+                </FontImageSource>
+            </Tab.Icon>
+            <ShellContent ContentTemplate="{DataTemplate local:MainPage}" />
+        </Tab>
+
+        <!-- Modes Tab -->
+        <Tab Title="Modes">
+            <Tab.Icon>
+                <FontImageSource>
+                    <FontImageSource.Glyph>
+                        <OnPlatform x:TypeArguments="x:String">
+                            <!-- SF Symbol for microphone on iOS/macOS -->
+                            <On Platform="iOS" Value="mic" />
+                            <On Platform="macOS" Value="mic" />
+
+                            <!-- Material Icon for microphone on Android/WinUI -->
+                            <On Platform="Android" Value="&#xE029;" />
+                            <!-- Material Mic Icon -->
+                            <On Platform="WinUI" Value="&#xE029;" />
+                        </OnPlatform>
+                    </FontImageSource.Glyph>
+
+                    <FontImageSource.FontFamily>
+                        <OnPlatform x:TypeArguments="x:String">
+                            <!-- Use SF Symbols on iOS/macOS -->
+                            <On Platform="iOS" Value="SF Symbols" />
+                            <On Platform="macOS" Value="SF Symbols" />
+
+                            <!-- Use Material Icons on Android/WinUI -->
+                            <On Platform="Android" Value="MaterialIcons" />
+                            <On Platform="WinUI" Value="MaterialIcons" />
+                        </OnPlatform>
+                    </FontImageSource.FontFamily>
+                </FontImageSource>
+            </Tab.Icon>
+            <ShellContent ContentTemplate="{DataTemplate local:ModesPage}" />
+        </Tab>
+
+    </TabBar>
+
+</Shell>

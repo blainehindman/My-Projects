@@ -1,0 +1,106 @@
+﻿@model FIZ_Markerspace.Models.ServiceLog
+
+@{
+    ViewBag.Title = "Details";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<h2>Details</h2>
+
+<div>
+    <h4>Service Logs</h4>
+    <hr />
+    <dl class="dl-horizontal">
+        <dt>
+            @Html.DisplayNameFor(model => model.service_id)
+        </dt>
+
+        <dd>
+            @Html.DisplayFor(model => model.service_id)
+        </dd>
+
+        <dt>
+            @Html.DisplayNameFor(model => model.user_id)
+        </dt>
+
+        <dd>
+            @Html.DisplayFor(model => model.user_id)
+        </dd>
+
+        <dt>
+            @Html.DisplayNameFor(model => model.wsu_id)
+        </dt>
+
+        <dd>
+            @Html.DisplayFor(model => model.wsu_id)
+        </dd>
+
+        <dt>
+            @Html.DisplayNameFor(model => model.first_name)
+        </dt>
+
+        <dd>
+            @Html.DisplayFor(model => model.first_name)
+        </dd>
+
+        <dt>
+            @Html.DisplayNameFor(model => model.last_name)
+        </dt>
+
+        <dd>
+            @Html.DisplayFor(model => model.last_name)
+        </dd>
+
+        <dt>
+            @Html.DisplayNameFor(model => model.room_id)
+        </dt>
+
+        <dd>
+            @Html.DisplayFor(model => model.room_id)
+        </dd>
+
+        <dt>
+            @Html.DisplayNameFor(model => model.room_name)
+        </dt>
+
+        <dd>
+            @Html.DisplayFor(model => model.room_name)
+        </dd>
+
+        <dt>
+            @Html.DisplayNameFor(model => model.machine_id)
+        </dt>
+
+        <dd>
+            @Html.DisplayFor(model => model.machine_id)
+        </dd>
+
+        <dt>
+            @Html.DisplayNameFor(model => model.machine_name)
+        </dt>
+
+        <dd>
+            @Html.DisplayFor(model => model.machine_name)
+        </dd>
+
+        <dt>
+            @Html.DisplayNameFor(model => model.time_stamp)
+        </dt>
+
+        <dd>
+            @Html.DisplayFor(model => model.time_stamp)
+        </dd>
+
+        <dt>
+            @Html.DisplayNameFor(model => model.notes)
+        </dt>
+
+        <dd>
+            @Html.DisplayFor(model => model.notes)
+        </dd>
+
+    </dl>
+</div>
+<p>
+    @Html.ActionLink("Back to List", "View_Logs")
+</p>

@@ -1,0 +1,74 @@
+﻿@model FIZ_Markerspace.Models.Room
+
+@{
+    ViewBag.Title = "Create";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<h2>Create</h2>
+
+
+<form id="Create_Room">
+    <br />
+    <label for="room_name">Room Name</label>
+    <input id="room_name" name="wsu_name" class="form-control" placeholder="Room Name" type="text" />
+    <br />
+    <input type="button" value="Submit" data-toggle="modal" data-target="#myModal" />
+</form>
+
+<div>
+    @Html.ActionLink("Back to List", "View_Rooms")
+</div>
+
+
+<script>
+    $(document).ready(function () {
+        $("#submit_authentication").click(function (event) {
+            //Authentication Data
+            var AUTH_WSU_ID = $("#auth_wsu_id").val();
+            var AUTH_PASSWORD = $("#auth_password").val();
+            //User Data
+            var ROOM_NAME = $("#room_name").val();
+
+            $.ajax({
+                type: "POST",
+                url: '@Url.Action("Create_Room")',
+                data: JSON.stringify({
+                    //Authentication Data
+                    AUTH_WSU_ID: AUTH_WSU_ID, AUTH_PASSWORD: AUTH_PASSWORD,
+                    //Room Data
+                    ROOM_NAME: ROOM_NAME
+                }),
+                dataType: "json",
+                contentType: "application/json; charset=utf-8",
+                success: function (return_data) {
+                    if (return_data.result == true) {
+                        swal({
+                            title: "Room Added!",
+                            text: return_data.message,
+                            icon: "success",
+                        });
+                    }
+                    if (return_data.result == false) {
+                        swal({
+                            title: "Error!",
+                            text: return_data.message,
+                            icon: "warning",
+                        });
+                    }
+                },
+                error: function (return_data) {
+                    swal({
+                        title: "Error!",
+                        text: "There was a problem submitting your data, check your inputs!",
+                        icon: "warning",
+                    });
+                },
+            });
+        });
+    });
+</script>
+
+@section Scripts {
+    @Scripts.Render("~/bundles/jqueryval")
+}

@@ -1,0 +1,79 @@
+﻿@model FIZ_Markerspace.Models.Room
+
+@{
+    ViewBag.Title = "Edit";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    var room_id = Model.room_id;
+    var room_name = Model.room_name;
+}
+
+<h2>Edit</h2>
+
+
+
+<form id="Create_Room">
+    <br />
+    <label for="room_name">Room Name</label>
+    <input id="room_name" name="wsu_name" value="@room_name"class="form-control" type="text" />
+    <br />
+    <input type="button" value="Submit" data-toggle="modal" data-target="#myModal" />
+</form>
+
+<div>
+    @Html.ActionLink("Back to List", "View_Rooms")
+</div>
+
+
+<script>
+    alert("WARNING: Changing Machine Name and/or Room Name will require a code update on the corresponding Raspberry Pi!")
+    $(document).ready(function () {
+        $("#submit_authentication").click(function (event) {
+            //Room Data
+            var ROOM_ID = "@room_id"
+            var ROOM_NAME = $("#room_name").val();
+            //Authentication Data
+            var AUTH_WSU_ID = $("#auth_wsu_id").val();
+            var AUTH_PASSWORD = $("#auth_password").val();
+
+            $.ajax({
+                type: "POST",
+                url: '@Url.Action("Edit_Room")',
+                data: JSON.stringify({
+                    //Authentication Data
+                    AUTH_WSU_ID: AUTH_WSU_ID, AUTH_PASSWORD: AUTH_PASSWORD,
+                    //Room Data
+                    ROOM_ID: ROOM_ID, ROOM_NAME: ROOM_NAME
+                }),
+                dataType: "json",
+                contentType: "application/json; charset=utf-8",
+                success: function (return_data) {
+                    if (return_data.result == true) {
+                        swal({
+                            title: "Room Updated!",
+                            text: "You updated " + ROOM_NAME + "!",
+                            icon: "success",
+                        });
+                    }
+                    if (return_data.result == false) {
+                        swal({
+                            title: "Error!",
+                            text: return_data.message,
+                            icon: "warning",
+                        });
+                    }
+                },
+                error: function (data) {
+                    swal({
+                        title: "Error!",
+                        text: "There was a problem updating your data, check your inputs!",
+                        icon: "warning",
+                    });
+                },
+            });
+        });
+    });
+</script>
+
+@section Scripts {
+    @Scripts.Render("~/bundles/jqueryval")
+}

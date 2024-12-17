@@ -1,0 +1,91 @@
+﻿@model FIZ_Markerspace.Models.User
+
+@{
+    ViewBag.Title = "Details";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<h2>Details</h2>
+
+<div>
+    <h4>User</h4>
+    <hr />
+    <dl class="dl-horizontal">
+        <dt>
+            @Html.DisplayNameFor(model => model.user_id)
+        </dt>
+
+        <dd>
+            @Html.DisplayFor(model => model.user_id)
+        </dd>
+
+        <dt>
+            @Html.DisplayNameFor(model => model.wsu_id)
+        </dt>
+
+        <dd>
+            @Html.DisplayFor(model => model.wsu_id)
+        </dd>
+
+        <dt>
+            @Html.DisplayNameFor(model => model.rfid_tag)
+        </dt>
+
+        <dd>
+            @Html.DisplayFor(model => model.rfid_tag)
+        </dd>
+
+        <dt>
+            @Html.DisplayNameFor(model => model.first_name)
+        </dt>
+
+        <dd>
+            @Html.DisplayFor(model => model.first_name)
+        </dd>
+
+        <dt>
+            @Html.DisplayNameFor(model => model.last_name)
+        </dt>
+
+        <dd>
+            @Html.DisplayFor(model => model.last_name)
+        </dd>
+
+        <dt>
+            @Html.DisplayNameFor(model => model.role)
+        </dt>
+
+        <dd>
+            @Html.DisplayFor(model => model.role)
+        </dd>
+
+        <dt>
+            @Html.DisplayNameFor(model => model.exp_level)
+        </dt>
+
+        <dd>
+            @Html.DisplayFor(model => model.exp_level)
+        </dd>
+
+        <dt>
+            @Html.DisplayNameFor(model => model.creation_date)
+        </dt>
+
+        <dd>
+            @Html.DisplayFor(model => model.creation_date)
+        </dd>
+
+        <dt>
+            @Html.DisplayNameFor(model => model.est_grad_date)
+        </dt>
+
+        <dd>
+            @Html.DisplayFor(model => model.est_grad_date)
+        </dd>
+
+    </dl>
+</div>
+<p>
+    @Html.ActionLink("Edit", "Edit", new { id = Model.user_id }) |
+    @Html.ActionLink("Back to List", "View_Users")
+</p>

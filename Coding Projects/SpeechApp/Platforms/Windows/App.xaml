@@ -1,0 +1,8 @@
+﻿<maui:MauiWinUIApplication
+    x:Class="SpeechApp.WinUI.App"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:maui="using:Microsoft.Maui"
+    xmlns:local="using:SpeechApp.WinUI">
+
+</maui:MauiWinUIApplication>

@@ -1,0 +1,79 @@
+﻿@model IEnumerable<FIZ_Markerspace.Models.Machine>
+
+@{
+    ViewBag.Title = "Machines";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<h2>Machines</h2>
+
+<p>
+    @Html.ActionLink("Create New", "Create_Machine")
+</p>
+<p>
+    @Html.ActionLink("Service", "Service_Machine", "Service")
+</p>
+<table class="table">
+    <tr>
+        <th>
+            @Html.DisplayNameFor(model => model.machine_name)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.room_name)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.status)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.service_level)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.usage_time)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.total_usage_time)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.service_flag)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.hardware_service_flag)
+        </th>
+        <th></th>
+    </tr>
+
+@foreach (var item in Model) {
+    <tr>
+        <td>
+            @Html.DisplayFor(modelItem => item.machine_name)
+        </td>
+        <td>
+            @Html.DisplayFor(modelItem => item.room_name)
+        </td>
+        <td>
+            @Html.DisplayFor(modelItem => item.status)
+        </td>
+        <td>
+            @Html.DisplayFor(modelItem => item.service_level)
+        </td>
+        <td>
+            @Html.DisplayFor(modelItem => item.usage_time)
+        </td>
+        <td>
+            @Html.DisplayFor(modelItem => item.total_usage_time)
+        </td>
+        <td>
+            @Html.DisplayFor(modelItem => item.service_flag)
+        </td>
+        <td>
+            @Html.DisplayFor(modelItem => item.hardware_service_flag)
+        </td>
+        <td>
+            @Html.ActionLink("Edit", "Edit_Machine", new { id=item.machine_id }) |
+            @Html.ActionLink("Details", "Machine_Details", new { id=item.machine_id })
+            @*@Html.ActionLink("Delete", "Delete_Machine", new { id=item.machine_id })*@
+        </td>
+    </tr>
+}
+
+</table>
