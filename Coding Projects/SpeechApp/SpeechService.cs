@@ -11,7 +11,7 @@ namespace SpeechApp
 {
     public class SpeechService
     {
-        private const string SpeechSubscriptionKey = "ccd0cb4135b84628a6c4b3c8ff12ab51"; // Replace with your Azure Speech Key
+        private const string SpeechSubscriptionKey = "no key visable"; // Replace with your Azure Speech Key
         private const string SpeechRegion = "westus"; // Replace with your Azure Region
         private Stopwatch stopwatch;
 
