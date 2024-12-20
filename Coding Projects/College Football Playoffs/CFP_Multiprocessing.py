@@ -1,5 +1,17 @@
 import requests
 import pandas as pd
+from concurrent.futures import ThreadPoolExecutor
+from multiprocessing import Pool
+
+# New Function for Concurrent Fetching
+def fetch_data_concurrently(functions_with_args):
+    results = []
+    with ThreadPoolExecutor() as executor:
+        futures = [executor.submit(func, *args) for func, args in functions_with_args]
+        for future in futures:
+            results.append(future.result())
+    return results
+
 
 # API key and headers
 API_KEY = "ooPM1hAjKzJwNeXBEpSo/KicAdjVFIUGxp1UygoZd+qGL8aCVDvs2C+ML79bx8tY"
@@ -330,6 +342,32 @@ def add_points_for_conference_champs(conference_champs, team_scores):
             team["Conference Champ Bonus"] = 0  # No bonus for non-champs
     return team_scores
 
+# New Function for Team Scoring
+def calculate_team_scores(team, offense_data, defense_data):
+    conference = team.get("conference")
+    record_points = calculate_record_points(team)
+    offense_points = calculate_offense_points(team, offense_data)
+    defense_points = calculate_defense_points(team, defense_data)
+    conference_points = calculate_conference_points(conference)
+    total_points = record_points + offense_points - defense_points + conference_points
+
+    wins = team.get("total", {}).get("wins", 0)
+    losses = team.get("total", {}).get("losses", 0)
+    ties = team.get("total", {}).get("ties", 0)
+    record_str = f"{wins}-{losses}-{ties}" if ties > 0 else f"{wins}-{losses}"
+
+    return {
+        "Team": f"{team['team']} ({record_str})",
+        "Conference": conference,
+        "Record Points": record_points,
+        "Offense Points": offense_points,
+        "Defense Points": defense_points,
+        "Conference Points": conference_points,
+        "Total Points": total_points,
+        "Base Non-Result Points": total_points
+    }
+
+
 # Create and print the tournament bracket
 def print_bracket(final_teams_df):
     # Split teams into two groups: top 4 (byes) and the remaining 8
@@ -361,48 +399,22 @@ def print_bracket(final_teams_df):
 #######################################################
 # Updated rank_teams function
 def rank_teams(year):
-    records = fetch_team_records(year)
-    offense_data = fetch_team_offense(year)
-    defense_data = fetch_team_defense(year)
+    # Parallel API Fetching
+    fetch_functions = [
+        (fetch_team_records, (year,)),
+        (fetch_team_offense, (year,)),
+        (fetch_team_defense, (year,))
+    ]
+    records, offense_data, defense_data = fetch_data_concurrently(fetch_functions)
+
     schedules = fetch_team_schedules(year)  # Fetch schedules for best team beaten calculation
     
-    team_scores = []
-
-    for team in records:
-        conference = team.get("conference")
-
-        # Calculate points for Record
-        record_points = calculate_record_points(team)
-
-        # Calculate points for Offense
-        offense_points = calculate_offense_points(team, offense_data)
-
-        # Calculate points for Defense
-        defense_points = calculate_defense_points(team, defense_data)
-
-        # Calculate points for Conference
-        conference_points = calculate_conference_points(conference)
-
-        total_points = record_points + offense_points - defense_points + conference_points
-        
-        Base_nonresult_points = total_points
-
-        # Prepare record string
-        wins = team.get("total", {}).get("wins", 0)
-        losses = team.get("total", {}).get("losses", 0)
-        ties = team.get("total", {}).get("ties", 0)
-        record_str = f"{wins}-{losses}-{ties}" if ties > 0 else f"{wins}-{losses}"
-
-        team_scores.append({
-            "Team": f"{team['team']} ({record_str})",
-            "Conference": conference,
-            "Record Points": record_points,
-            "Offense Points": offense_points,
-            "Defense Points": defense_points,
-            "Conference Points": conference_points,
-            "Total Points": total_points,
-            "Base Non-Result Points": Base_nonresult_points
-        })
+    # New Code: Parallel Team Scoring
+    with Pool(processes=4) as pool:  # Adjust the number of processes as needed
+        team_scores = pool.starmap(
+            calculate_team_scores,
+            [(team, offense_data, defense_data) for team in records]
+        )
 
     # Add points for conference champions
     add_points_for_conference_champs(CONFERENCE_CHAMPS, team_scores)
