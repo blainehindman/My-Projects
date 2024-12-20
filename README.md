@@ -8,24 +8,23 @@ A comprehensive reimagining of the college football playoff ranking system. This
   Implements parallel computing concepts to enhance the efficiency of ranking calculations.
   Uses multiprocessing for tasks like team scoring and schedule strength evaluations.
   Optimized for large datasets to ensure faster execution without compromising accuracy.
-
-2. CFP_Playoffs
-   Focuses on conference champions and reseeding for the top 12 teams.
-   Automatically grants auto-bids to conference champions while maintaining competitive fairness.
-   Simulates the playoff structure, including first-round matchups and byes.
-   Provides a transparent view of playoff seeding, matchups, and results.
-3. CFP_Rankings
-   Produces top 50 rankings based on custom algorithms.
-   Combines record points, offense and defense performance, strength of schedule (SoS), and other metrics.
-   Designed to ensure accurate and transparent evaluations of team performances.
-   Additional File
-   rules.txt
-   Description: A detailed text file outlining the rules and criteria used in the ranking and playoff systems.
-   Contents:
-   Conference champion auto-bid requirements.
-   Scoring breakdown: Record, SoS, offense, defense, and bonus points.
-   Tie-breaking criteria for rankings and playoff seeding.
-   Detailed playoff structure and matchup rules.
+- **CFP_Playoffs**
+  Focuses on conference champions and reseeding for the top 12 teams.
+  Automatically grants auto-bids to conference champions while maintaining competitive fairness.
+  Simulates the playoff structure, including first-round matchups and byes.
+  Provides a transparent view of playoff seeding, matchups, and results.
+- **CFP_Rankings**
+  Produces top 50 rankings based on custom algorithms.
+  Combines record points, offense and defense performance, strength of schedule (SoS), and other metrics.
+  Designed to ensure accurate and transparent evaluations of team performances.
+  Additional File
+  rules.txt
+  Description: A detailed text file outlining the rules and criteria used in the ranking and playoff systems.
+  Contents:
+  Conference champion auto-bid requirements.
+  Scoring breakdown: Record, SoS, offense, defense, and bonus points.
+  Tie-breaking criteria for rankings and playoff seeding.
+  Detailed playoff structure and matchup rules.
 
 ---
 
