@@ -1,28 +1,79 @@
+import os
 import sqlite3
 import ssl
 import socket
 import random
-import os
 import base64
+import time
+from datetime import datetime, timedelta, timezone
+from cryptography import x509
+from cryptography.x509.oid import NameOID
+from cryptography.hazmat.primitives.asymmetric import rsa
+from cryptography.hazmat.primitives import serialization, hashes
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
-from cryptography.hazmat.primitives import hashes
-from cryptography.hazmat.backends import default_backend
 from threading import Thread
 
-# Get the absolute path to the directory containing the script
-script_dir = os.path.dirname(os.path.abspath(__file__))
-db_path = os.path.join(script_dir, "secure_ssn.db")
+# Generate self-signed certificate and key in the same folder as this script
+def generate_self_signed_cert():
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    cert_path = os.path.join(script_dir, "server.pem")
+    key_path = os.path.join(script_dir, "server.key")
 
-# Generate a random fake SSN
+    if os.path.exists(cert_path) and os.path.exists(key_path):
+        print("Certificate and key already exist, skipping generation.")
+        return
+
+    key = rsa.generate_private_key(
+        public_exponent=65537,
+        key_size=2048,
+    )
+
+    subject = issuer = x509.Name([
+        x509.NameAttribute(NameOID.COUNTRY_NAME, "US"),
+        x509.NameAttribute(NameOID.STATE_OR_PROVINCE_NAME, "Washington"),
+        x509.NameAttribute(NameOID.LOCALITY_NAME, "Seattle"),
+        x509.NameAttribute(NameOID.ORGANIZATION_NAME, "MyOrganization"),
+        x509.NameAttribute(NameOID.COMMON_NAME, "localhost"),
+    ])
+    cert = (
+        x509.CertificateBuilder()
+        .subject_name(subject)
+        .issuer_name(issuer)
+        .public_key(key.public_key())
+        .serial_number(x509.random_serial_number())
+        .not_valid_before(datetime.now(timezone.utc))
+        .not_valid_after(datetime.now(timezone.utc) + timedelta(days=365))
+        .add_extension(
+            x509.SubjectAlternativeName([x509.DNSName("localhost")]),
+            critical=False,
+        )
+        .sign(key, hashes.SHA256())
+    )
+
+    with open(key_path, "wb") as key_file:
+        key_file.write(
+            key.private_bytes(
+                encoding=serialization.Encoding.PEM,
+                format=serialization.PrivateFormat.TraditionalOpenSSL,
+                encryption_algorithm=serialization.NoEncryption(),
+            )
+        )
+
+    with open(cert_path, "wb") as cert_file:
+        cert_file.write(cert.public_bytes(serialization.Encoding.PEM))
+
+    print(f"Self-signed certificate and key have been generated:\n- {cert_path}\n- {key_path}")
+
+
+# Generate a fake SSN
 def generate_fake_ssn():
-    ssn = f"{random.randint(100, 999)}-{random.randint(10, 99)}-{random.randint(1000, 9999)}"
-    return ssn
+    return f"{random.randint(100, 999)}-{random.randint(10, 99)}-{random.randint(1000, 9999)}"
 
 # Securely encrypt the SSN using AES
 def encrypt_ssn(ssn, key):
     iv = os.urandom(16)
-    cipher = Cipher(algorithms.AES(key), modes.CFB(iv), backend=default_backend())
+    cipher = Cipher(algorithms.AES(key), modes.CFB(iv))
     encryptor = cipher.encryptor()
     encrypted_ssn = encryptor.update(ssn.encode()) + encryptor.finalize()
     return base64.b64encode(iv + encrypted_ssn).decode()
@@ -31,7 +82,7 @@ def encrypt_ssn(ssn, key):
 def decrypt_ssn(encrypted_ssn, key):
     data = base64.b64decode(encrypted_ssn)
     iv, encrypted_ssn = data[:16], data[16:]
-    cipher = Cipher(algorithms.AES(key), modes.CFB(iv), backend=default_backend())
+    cipher = Cipher(algorithms.AES(key), modes.CFB(iv))
     decryptor = cipher.decryptor()
     return decryptor.update(encrypted_ssn) + decryptor.finalize()
 
@@ -42,60 +93,71 @@ def generate_aes_key(password, salt):
         length=32,
         salt=salt,
         iterations=100000,
-        backend=default_backend(),
     )
     return kdf.derive(password.encode())
 
 # Secure Transmission Simulation (TLS/SSL)
 def start_tls_server():
-    # Simulated server that receives the SSN securely
-    context = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH)
-    context.load_cert_chain(certfile="server.pem", keyfile="server.key")
+    try:
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        cert_path = os.path.join(script_dir, "server.pem")
+        key_path = os.path.join(script_dir, "server.key")
 
-    server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    secure_server = context.wrap_socket(server_socket, server_side=True)
-    secure_server.bind(('localhost', 65432))
-    secure_server.listen(1)
-    print("Server is ready to securely receive data (TLS/SSL enabled).")
+        context = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH)
+        context.load_cert_chain(certfile=cert_path, keyfile=key_path)
 
-    conn, addr = secure_server.accept()
-    print(f"Secure connection established with {addr}.")
-    data = conn.recv(1024).decode()
-    print(f"Securely received SSN: {data}")
-    conn.close()
-    secure_server.close()
+        server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        secure_server = context.wrap_socket(server_socket, server_side=True)
+        secure_server.bind(('localhost', 65432))
+        secure_server.listen(1)
+        print("Server is ready to securely receive data (TLS/SSL enabled).")
+
+        conn, addr = secure_server.accept()
+        print(f"Secure connection established with {addr}.")
+
+        # Read all chunks of data
+        received_data = []
+        while True:
+            chunk = conn.recv(1024)  # Read 1024 bytes at a time
+            if not chunk:  # If no more data, break the loop
+                break
+            received_data.append(chunk)
+
+        # Decode the received data
+        data = b"".join(received_data).decode()
+        if data:
+            print(f"Securely received SSN: {data}")
+        else:
+            print("No data received!")
+
+        conn.close()
+        secure_server.close()
+    except Exception as e:
+        print(f"Server error: {e}")
+
 
 def start_tls_client(ssn):
-    # Simulated client that transmits the SSN securely
-    context = ssl.create_default_context(ssl.Purpose.SERVER_AUTH)
-    context.check_hostname = False
-    context.verify_mode = ssl.CERT_NONE
+    try:
+        context = ssl.create_default_context(ssl.Purpose.SERVER_AUTH)
+        context.check_hostname = False
+        context.verify_mode = ssl.CERT_NONE
 
-    with socket.create_connection(('localhost', 65432)) as sock:
-        with context.wrap_socket(sock, server_hostname='localhost') as secure_client:
-            print(f"Securely transmitting SSN: {ssn}")
-            secure_client.send(ssn.encode())
+        with socket.create_connection(('localhost', 65432)) as sock:
+            with context.wrap_socket(sock, server_hostname='localhost') as secure_client:
+                print(f"Client is sending: {ssn}")
+                secure_client.sendall(ssn.encode())  # Ensure all data is sent
+                time.sleep(0.5)  # Short delay to allow server to process
+                secure_client.shutdown(socket.SHUT_RDWR)  # Graceful shutdown
+                secure_client.close()
+    except Exception as e:
+        print(f"Client error: {e}")
 
-# Store the encrypted SSN in a SQLite database
-def store_ssn_in_database(encrypted_ssn):
-    conn = sqlite3.connect(db_path)
-    cursor = conn.cursor()
-    cursor.execute("CREATE TABLE IF NOT EXISTS ssn_data (id INTEGER PRIMARY KEY, encrypted_ssn TEXT)")
-    cursor.execute("INSERT INTO ssn_data (encrypted_ssn) VALUES (?)", (encrypted_ssn,))
-    conn.commit()
-    conn.close()
-
-# Retrieve the encrypted SSN from the database
-def retrieve_ssn_from_database():
-    conn = sqlite3.connect(db_path)
-    cursor = conn.cursor()
-    cursor.execute("SELECT encrypted_ssn FROM ssn_data ORDER BY id DESC LIMIT 1")
-    result = cursor.fetchone()
-    conn.close()
-    return result[0] if result else None
 
 # Main program
 if __name__ == "__main__":
+    # Generate certificates if not already present
+    generate_self_signed_cert()
+
     # Generate a fake SSN
     fake_ssn = generate_fake_ssn()
     print(f"Generated SSN: {fake_ssn}")
@@ -105,6 +167,8 @@ if __name__ == "__main__":
     server_thread.start()
 
     # Simulate secure transmission
+    from time import sleep
+    sleep(2)  # Give server time to initialize
     start_tls_client(fake_ssn)
 
     server_thread.join()
@@ -115,10 +179,8 @@ if __name__ == "__main__":
 
     # Encrypt the SSN and store it securely
     encrypted_ssn = encrypt_ssn(fake_ssn, key)
-    store_ssn_in_database(encrypted_ssn)
     print(f"Encrypted SSN securely stored: {encrypted_ssn}")
 
-    # Retrieve and decrypt the SSN from the database
-    retrieved_encrypted_ssn = retrieve_ssn_from_database()
-    decrypted_ssn = decrypt_ssn(retrieved_encrypted_ssn, key).decode()
-    print(f"Decrypted SSN (retrieved from database): {decrypted_ssn}")
+    # Simulate retrieving and decrypting the SSN
+    decrypted_ssn = decrypt_ssn(encrypted_ssn, key).decode()
+    print(f"Decrypted SSN: {decrypted_ssn}")

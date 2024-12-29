@@ -17,7 +17,7 @@ A comprehensive reimagining of the college football playoff ranking system. This
   Produces top 50 rankings based on custom algorithms.
   Combines record points, offense and defense performance, strength of schedule (SoS), and other metrics.
   Designed to ensure accurate and transparent evaluations of team performances.
-  Additional File
+  Additional Files
   rules.txt
   Description: A detailed text file outlining the rules and criteria used in the ranking and playoff systems.
   Contents:
@@ -25,6 +25,28 @@ A comprehensive reimagining of the college football playoff ranking system. This
   Scoring breakdown: Record, SoS, offense, defense, and bonus points.
   Tie-breaking criteria for rankings and playoff seeding.
   Detailed playoff structure and matchup rules.
+
+---
+
+### Data Privacy & Protection: Encryption Project
+
+A comprehensive system demonstrating best practices in data encryption, key management, and PII protection. This project is organized into **Asymmetric Encryption** (RSA) for secure key exchange and **Symmetric Encryption** (Fernet) for data confidentiality. It includes a mock KeyVault for key management and a mock database for encrypted PII storage.
+
+- **Asymmetric Encryption (RSA)**: Securely encrypts and exchanges keys or small amounts of data.
+- **Symmetric Encryption (Fernet)**: Encrypts larger datasets for storage or transmission.
+- **Key Management**: Simulated KeyVault ensures secure and isolated key handling.
+- **Mock Database**: Stores encrypted sensitive data, ensuring privacy and security.
+
+---
+
+### Data Loss Prevention (DLP): Secure SSN Transmission and Storage System
+
+A secure system for transmitting, encrypting, and storing Social Security Numbers (SSNs) to prevent data loss. This project uses TLS/SSL for secure transmission and AES encryption for robust storage in a SQLite database.
+
+- **Secure Transmission**: TLS/SSL ensures encrypted communication using self-signed certificates.
+- **AES Encryption**: Encrypts sensitive data before storage in a secure database.
+- **Random SSN Generation**: Creates fake SSNs for testing workflows without handling real data.
+- **DLP Practices**: Protects sensitive data at rest and in transit, preventing unauthorized access.
 
 ---
 

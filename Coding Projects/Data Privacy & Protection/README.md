@@ -2,7 +2,7 @@
 
 ## Overview
 
-This project is organized into two main folders, **Asymmetric Encryption** and **Symmetric Encryption**, each serving distinct purposes and employing industry-standard encryption methods. Additionally, it incorporates a mock KeyVault for secure key storage and a mock database containing sensitive personally identifiable information (PII).
+This project implements **Data Privacy & Protection** by Encryption. It is organized into two main folders, **Asymmetric Encryption** and **Symmetric Encryption**, each serving distinct purposes and employing industry-standard encryption methods. Additionally, it incorporates a mock KeyVault for secure key storage and a mock database containing sensitive personally identifiable information (PII).
 
 ---
 
