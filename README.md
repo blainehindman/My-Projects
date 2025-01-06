@@ -71,3 +71,17 @@ An innovative app designed to assist individuals with speech impediments and pub
 - Tools to help users build confidence and improve their communication skills.
 
 This app aims to empower users by breaking barriers and fostering effective communication.
+
+---
+
+### Oreo Computer Vision
+
+Oreo Computer Vision is a real-time object detection project that uses a custom-trained YOLOv5 model and OpenCV. The application processes live video from a camera, identifies objects, and focuses on detecting a specific class, such as an **Oreo Container**.
+
+The project demonstrates:
+
+- The integration of computer vision techniques with live video feeds.
+- The use of a pre-trained YOLOv5 model fine-tuned for custom object detection.
+- Real-time performance with automated responses to specific object detections.
+
+This project is ideal for showcasing the potential of computer vision in solving specific real-world tasks like product recognition or targeted object detection.
