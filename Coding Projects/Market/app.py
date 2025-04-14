@@ -12,6 +12,7 @@ import ta  # Technical Analysis library
 import uuid  # For generating unique transaction IDs
 import json
 from pathlib import Path
+import time
 
 # Load environment variables
 load_dotenv()
@@ -78,6 +79,8 @@ if 'sp500_data' not in st.session_state:
     st.session_state.sp500_data = None
 if 'buy_signals' not in st.session_state:
     st.session_state.buy_signals = None
+if 'sell_signals' not in st.session_state:
+    st.session_state.sell_signals = None
 if 'last_analysis_time' not in st.session_state:
     st.session_state.last_analysis_time = None
 if 'search_symbol' not in st.session_state:
@@ -106,6 +109,8 @@ if 'sp500_data' not in st.session_state:
     st.session_state.sp500_data = None
 if 'buy_signals' not in st.session_state:
     st.session_state.buy_signals = None
+if 'sell_signals' not in st.session_state:
+    st.session_state.sell_signals = None
 if 'last_analysis_time' not in st.session_state:
     st.session_state.last_analysis_time = None
 if 'search_symbol' not in st.session_state:
@@ -193,6 +198,7 @@ def calculate_technical_indicators(df):
     # Calculate Bollinger Bands
     bollinger = ta.volatility.BollingerBands(df['close'])
     df['BB_lower'] = bollinger.bollinger_lband()
+    df['BB_upper'] = bollinger.bollinger_hband()
     
     return df
 
@@ -251,6 +257,63 @@ def check_buy_conditions(df, symbol):
     print(f"{'='*50}\n")
     
     return rsi_condition and macd_condition and bb_condition
+
+def check_sell_conditions(df, symbol):
+    """Check if a stock meets the sell conditions."""
+    if len(df) < 2:  # Need at least 2 data points for MACD crossover
+        print(f"\n{symbol}: Insufficient data points (need at least 2, got {len(df)})")
+        return False
+    
+    # Get date range info
+    start_date = df.index[0].strftime('%Y-%m-%d')
+    end_date = df.index[-1].strftime('%Y-%m-%d')
+    total_days = len(df)
+        
+    # Check RSI > 70 (Overbought)
+    rsi_condition = df['RSI'].iloc[-1] > 70
+    
+    # Check MACD bearish crossover (MACD line crosses below signal line)
+    macd_prev = df['MACD'].iloc[-2] - df['MACD_Signal'].iloc[-2]
+    macd_curr = df['MACD'].iloc[-1] - df['MACD_Signal'].iloc[-1]
+    macd_condition = macd_prev > 0 and macd_curr < 0
+    
+    # Check if price is above upper Bollinger Band
+    bb_condition = df['close'].iloc[-1] > df['BB_upper'].iloc[-1]
+    
+    # Count conditions met (need 2 out of 3)
+    conditions_met = sum([rsi_condition, macd_condition, bb_condition])
+    
+    # Print detailed analysis
+    print(f"\n{'='*50}")
+    print(f"Sell Analysis Report for {symbol}")
+    print(f"{'='*50}")
+    print(f"Date Range: {start_date} to {end_date} ({total_days} trading days)")
+    
+    print(f"\nPrice Information:")
+    print(f"Current Price: ${df['close'].iloc[-1]:.2f}")
+    print(f"Previous Close: ${df['close'].iloc[-2]:.2f}")
+    print(f"Period Change: {((df['close'].iloc[-1] - df['close'].iloc[0]) / df['close'].iloc[0] * 100):.2f}%")
+    
+    print(f"\nSell Conditions ({conditions_met}/3, need 2/3):")
+    print(f"1. RSI > 70: {'✅' if rsi_condition else '❌'}")
+    print(f"   Current RSI: {df['RSI'].iloc[-1]:.2f}")
+    print(f"   Previous RSI: {df['RSI'].iloc[-2]:.2f}")
+    
+    print(f"\n2. MACD Bearish Crossover: {'✅' if macd_condition else '❌'}")
+    print(f"   Current MACD: {df['MACD'].iloc[-1]:.4f}")
+    print(f"   Current Signal: {df['MACD_Signal'].iloc[-1]:.4f}")
+    print(f"   Current Difference: {macd_curr:.4f}")
+    print(f"   Previous Difference: {macd_prev:.4f}")
+    
+    print(f"\n3. Price Above BB: {'✅' if bb_condition else '❌'}")
+    print(f"   Current Price: ${df['close'].iloc[-1]:.2f}")
+    print(f"   Upper BB: ${df['BB_upper'].iloc[-1]:.2f}")
+    print(f"   Distance from BB: ${abs(df['close'].iloc[-1] - df['BB_upper'].iloc[-1]):.2f}")
+    
+    print(f"\nFinal Result: {'🔴 SELL SIGNAL' if conditions_met >= 2 else '⏳ NO SIGNAL'}")
+    print(f"{'='*50}\n")
+    
+    return conditions_met >= 2
 
 def search_page():
     st.markdown("""
@@ -363,14 +426,12 @@ def search_page():
 
 def analyze_page():
     st.markdown("""
-    Analyze all S&P 500 stocks using Alpaca data.
+    # S&P 500 Analysis
+    Analyze stocks for buy and sell signals based on technical indicators.
     """)
     
     # Add lookback period selector
     lookback_options = {
-        "1 Day": "1D",
-        "5 Days": "5D",
-        "1 Month": "1M",
         "6 Months": "6M",
         "1 Year": "1Y",
         "5 Years": "5Y"
@@ -379,10 +440,10 @@ def analyze_page():
     lookback = st.selectbox(
         "Select Lookback Period",
         options=list(lookback_options.keys()),
-        index=1
+        index=0  # Default to 6 Months
     )
 
-    # Add refresh button and last analysis time display
+    # Add analyze button and last analysis time
     col1, col2 = st.columns([2,3])
     with col1:
         analyze_button = st.button("Analyze S&P 500")
@@ -390,26 +451,30 @@ def analyze_page():
         if st.session_state.last_analysis_time:
             st.text(f"Last analyzed: {st.session_state.last_analysis_time.strftime('%Y-%m-%d %H:%M:%S')}")
     
-    # Show data if it exists in session state, otherwise fetch new data
     if analyze_button:
-        with st.spinner("Fetching S&P 500 data... This may take a few minutes."):
-            try:
-                # Get S&P 500 symbols
-                symbols = get_sp500_symbols()
+        with st.spinner("Analyzing stocks..."):
+            results = []
+            sell_signals = []
+            portfolio_analysis = []  # New list to store all portfolio stock analysis
+            buy_signals = []
+            
+            # Progress bar
+            progress_bar = st.progress(0)
+            
+            # Get start date based on selected lookback period
+            start_date = get_start_date(lookback_options[lookback])
+            
+            # First, analyze portfolio stocks for sell signals
+            if not st.session_state.portfolio.empty:
+                portfolio_symbols = st.session_state.portfolio['Symbol'].unique()
                 
-                # Get start date based on selected lookback period
-                start_date = get_start_date(lookback_options[lookback])
+                print("\n\n" + "="*80)
+                print("ANALYZING PORTFOLIO POSITIONS FOR SELL SIGNALS")
+                print("="*80 + "\n")
                 
-                # Create a DataFrame to store results
-                results = []
-                buy_signals = []
-                
-                # Progress bar
-                progress_bar = st.progress(0)
-                
-                for i, symbol in enumerate(symbols):
+                for symbol in portfolio_symbols:
                     try:
-                        # Get daily bars
+                        # Use the same start_date as defined above instead of recalculating
                         bars = api.get_bars(
                             symbol,
                             '1D',
@@ -418,15 +483,85 @@ def analyze_page():
                         ).df
                         
                         if not bars.empty:
-                            # Calculate technical indicators
-                            bars = calculate_technical_indicators(bars)
+                            df = calculate_technical_indicators(bars)
                             
-                            last_price = bars['close'].iloc[-1]
-                            daily_change = ((bars['close'].iloc[-1] - bars['open'].iloc[-1]) / bars['open'].iloc[-1]) * 100
-                            volume = bars['volume'].iloc[-1]
-                            period_change = ((bars['close'].iloc[-1] - bars['close'].iloc[0]) / bars['close'].iloc[0]) * 100
+                            # Calculate conditions
+                            rsi_condition = df['RSI'].iloc[-1] > 70
+                            macd_prev = df['MACD'].iloc[-2] - df['MACD_Signal'].iloc[-2]
+                            macd_curr = df['MACD'].iloc[-1] - df['MACD_Signal'].iloc[-1]
+                            macd_condition = macd_prev > 0 and macd_curr < 0
+                            bb_condition = df['close'].iloc[-1] > df['BB_upper'].iloc[-1]
+                            conditions_met = sum([rsi_condition, macd_condition, bb_condition])
                             
-                            # Check buy conditions
+                            # Add to portfolio analysis regardless of sell conditions
+                            portfolio_analysis.append({
+                                'Symbol': symbol,
+                                'Current Price': df['close'].iloc[-1],
+                                'RSI': df['RSI'].iloc[-1],
+                                'RSI Condition': "✅" if rsi_condition else "❌",
+                                'MACD Diff': df['MACD'].iloc[-1] - df['MACD_Signal'].iloc[-1],
+                                'MACD Crossover': "✅" if macd_condition else "❌",
+                                'BB Distance': df['close'].iloc[-1] - df['BB_upper'].iloc[-1],
+                                'BB Condition': "✅" if bb_condition else "❌",
+                                'Conditions Met': f"{conditions_met}/3",
+                                'Sell Signal': "🔴 SELL" if conditions_met >= 2 else "⏳ HOLD"
+                            })
+                            
+                            # Still add to sell signals if criteria met
+                            if check_sell_conditions(df, symbol):
+                                sell_signals.append({
+                                    'Symbol': symbol,
+                                    'Current Price': df['close'].iloc[-1],
+                                    'RSI': df['RSI'].iloc[-1],
+                                    'MACD Diff': df['MACD'].iloc[-1] - df['MACD_Signal'].iloc[-1],
+                                    'BB Distance': df['close'].iloc[-1] - df['BB_upper'].iloc[-1]
+                                })
+                    
+                    except Exception as e:
+                        print(f"Error analyzing {symbol}: {str(e)}")
+                        continue
+            
+            # Store sell signals and portfolio analysis in session state
+            st.session_state.sell_signals = pd.DataFrame(sell_signals) if sell_signals else None
+            st.session_state.portfolio_analysis = pd.DataFrame(portfolio_analysis) if portfolio_analysis else None
+            
+            # Then analyze all S&P 500 for buy signals
+            print("\n\n" + "="*80)
+            print("ANALYZING S&P 500 STOCKS FOR BUY SIGNALS")
+            print("="*80 + "\n")
+            
+            symbols = get_sp500_symbols()
+            
+            for i, symbol in enumerate(symbols):
+                try:
+                    # Get daily bars
+                    bars = api.get_bars(
+                        symbol,
+                        '1D',
+                        start=start_date.strftime('%Y-%m-%d'),
+                        adjustment='raw'
+                    ).df
+                    
+                    if not bars.empty:
+                        # Calculate technical indicators
+                        bars = calculate_technical_indicators(bars)
+                        
+                        last_price = bars['close'].iloc[-1]
+                        daily_change = ((bars['close'].iloc[-1] - bars['open'].iloc[-1]) / bars['open'].iloc[-1]) * 100
+                        volume = bars['volume'].iloc[-1]
+                        period_change = ((bars['close'].iloc[-1] - bars['close'].iloc[0]) / bars['close'].iloc[0]) * 100
+                        
+                        # Only print analysis if conditions are close to being met
+                        rsi = bars['RSI'].iloc[-1]
+                        macd_diff = bars['MACD'].iloc[-1] - bars['MACD_Signal'].iloc[-1]
+                        price_vs_bb = bars['close'].iloc[-1] - bars['BB_lower'].iloc[-1]
+                        
+                        # Check if worth printing (close to buy conditions)
+                        if (rsi < 35 or  # RSI close to oversold
+                            (abs(macd_diff) < 0.5) or  # MACD close to crossover
+                            (abs(price_vs_bb) < bars['close'].iloc[-1] * 0.02)):  # Price close to BB
+                            
+                            # Check buy conditions and print analysis
                             if check_buy_conditions(bars, symbol):
                                 buy_signals.append({
                                     'Symbol': symbol,
@@ -436,42 +571,40 @@ def analyze_page():
                                     'MACD_Signal': bars['MACD_Signal'].iloc[-1],
                                     'BB_Lower': bars['BB_lower'].iloc[-1]
                                 })
-                            
-                            results.append({
-                                'Symbol': symbol,
-                                'Price': last_price,
-                                'Daily Change %': daily_change,
-                                f'{lookback} Change %': period_change,
-                                'Volume': volume,
-                                'RSI': bars['RSI'].iloc[-1]
-                            })
-                    
-                    except Exception as e:
-                        st.warning(f"Could not fetch data for {symbol}: {str(e)}")
-                    
-                    # Update progress
-                    progress_bar.progress((i + 1) / len(symbols))
+                        
+                        results.append({
+                            'Symbol': symbol,
+                            'Price': last_price,
+                            'Daily Change %': daily_change,
+                            f'{lookback} Change %': period_change,
+                            'Volume': volume,
+                            'RSI': bars['RSI'].iloc[-1]
+                        })
                 
-                # Store results in session state
-                if results:
-                    df = pd.DataFrame(results)
-                    st.session_state.sp500_data = df.sort_values('Daily Change %', ascending=False)
-                    st.session_state.buy_signals = pd.DataFrame(buy_signals) if buy_signals else None
-                    st.session_state.last_analysis_time = datetime.now()
+                except Exception as e:
+                    st.warning(f"Could not fetch data for {symbol}: {str(e)}")
                 
-            except Exception as e:
-                st.error("An error occurred during analysis.")
-                st.error(f"Error details: {str(e)}")
-                st.error("Stack trace:")
-                st.code(traceback.format_exc())
+                # Update progress
+                progress_bar.progress((i + 1) / len(symbols))
 
-    # Display stored results if they exist
+            print("\n\n" + "="*80)
+            print("ANALYSIS COMPLETE")
+            print("="*80 + "\n")
+
+            # Store results in session state
+            if results:
+                df = pd.DataFrame(results)
+                st.session_state.sp500_data = df.sort_values('Daily Change %', ascending=False)
+                st.session_state.buy_signals = pd.DataFrame(buy_signals) if buy_signals else None
+                st.session_state.last_analysis_time = datetime.now()
+
+    # Display results in organized sections
     if st.session_state.sp500_data is not None:
-        # Display full table with search and filters
+        # 1. All S&P 500 Stocks
         st.subheader("All S&P 500 Stocks")
         st.dataframe(st.session_state.sp500_data)
         
-        # Download button
+        # Download button for all stocks
         csv = st.session_state.sp500_data.to_csv(index=False)
         st.download_button(
             label="Download Data as CSV",
@@ -480,29 +613,57 @@ def analyze_page():
             mime="text/csv"
         )
         
-        # Display Buy Signals
+        # 2. Buy Signals
         st.subheader("🎯 Buy Signals - Stocks Meeting All Conditions")
-        st.markdown("""
-        The following stocks meet all three buy conditions:
-        - RSI < 30 (Oversold)
-        - MACD bullish crossover
-        - Price below lower Bollinger Band
-        """)
-        
-        if st.session_state.buy_signals is not None:
+        if st.session_state.buy_signals is not None and not st.session_state.buy_signals.empty:
             st.dataframe(st.session_state.buy_signals)
             
             # Download button for buy signals
             buy_csv = st.session_state.buy_signals.to_csv(index=False)
             st.download_button(
-                label="Download Buy Signals as CSV",
+                label="Download Buy Signals",
                 data=buy_csv,
                 file_name="sp500_buy_signals.csv",
                 mime="text/csv",
-                key="buy_signals"  # Unique key to avoid conflict with previous download button
+                key="buy_signals"
             )
         else:
             st.info("No stocks currently meet all buy conditions.")
+        
+        # 3. Sell Signals
+        st.subheader("💰 Sell Signals - Portfolio Positions")
+        if not st.session_state.portfolio.empty:
+            if st.session_state.portfolio_analysis is not None and not st.session_state.portfolio_analysis.empty:
+                st.dataframe(st.session_state.portfolio_analysis)
+                
+                # Download button for portfolio analysis
+                portfolio_csv = st.session_state.portfolio_analysis.to_csv(index=False)
+                st.download_button(
+                    label="Download Portfolio Analysis",
+                    data=portfolio_csv,
+                    file_name="portfolio_analysis.csv",
+                    mime="text/csv",
+                    key="download_portfolio_analysis"
+                )
+                
+                # Also display specific sell signals if any
+                if st.session_state.sell_signals is not None and not st.session_state.sell_signals.empty:
+                    st.subheader("🔴 Stocks Meeting Sell Criteria")
+                    st.dataframe(st.session_state.sell_signals)
+                    
+                    # Download button for sell signals
+                    sell_csv = st.session_state.sell_signals.to_csv(index=False)
+                    st.download_button(
+                        label="Download Sell Signals",
+                        data=sell_csv,
+                        file_name="sell_signals.csv",
+                        mime="text/csv",
+                        key="sell_signals"
+                    )
+            else:
+                st.info("No portfolio analysis available. Run the analysis to evaluate your positions.")
+        else:
+            st.info("No positions in portfolio to analyze. Add stocks to your portfolio first.")
 
 def definitions_page():
     st.markdown("""
@@ -510,11 +671,19 @@ def definitions_page():
     
     This page explains the technical indicators used in our analysis and their calculations.
     
-    ## 🎯 Buy Signal Criteria
+    ## 🎯 Signal Criteria
+    
+    ### Buy Signals
     A stock generates a buy signal when ALL three conditions are met simultaneously:
     1. RSI is below 30 (oversold)
     2. MACD shows a bullish crossover
     3. Price is below the lower Bollinger Band
+    
+    ### Sell Signals
+    A stock generates a sell signal when ANY TWO of these three conditions are met:
+    1. RSI is above 70 (overbought)
+    2. MACD shows a bearish crossover
+    3. Price is above the upper Bollinger Band
     
     ## 📊 Technical Indicators
     
@@ -523,7 +692,8 @@ def definitions_page():
     
     **Parameters:**
     - Lookback period: 14 days
-    - Oversold threshold: 30
+    - Oversold threshold: 30 (Buy signal)
+    - Overbought threshold: 70 (Sell signal)
     
     **Formula:**
     ```
@@ -534,7 +704,7 @@ def definitions_page():
     
     **Interpretation:**
     - RSI < 30: Oversold condition (Buy signal)
-    - RSI > 70: Overbought condition
+    - RSI > 70: Overbought condition (Sell signal)
     - RSI = 50: Neutral
     
     ### 2. MACD (Moving Average Convergence Divergence)
@@ -556,14 +726,14 @@ def definitions_page():
     
     **Interpretation:**
     - Bullish Crossover (Buy signal): MACD Line crosses above Signal Line
-    - Bearish Crossover: MACD Line crosses below Signal Line
+    - Bearish Crossover (Sell signal): MACD Line crosses below Signal Line
     
     ### 3. Bollinger Bands
     Bollinger Bands measure volatility and show relative price levels.
     
     **Parameters:**
     - Middle Band: 20-day Simple Moving Average (SMA)
-    - Standard Deviation: 2
+    - Upper/Lower Bands: 2 standard deviations from SMA
     
     **Formula:**
     ```
@@ -578,7 +748,7 @@ def definitions_page():
     
     **Interpretation:**
     - Price below Lower Band (Buy signal): Potentially oversold
-    - Price above Upper Band: Potentially overbought
+    - Price above Upper Band (Sell signal): Potentially overbought
     - Price near Middle Band: Normal trading range
     
     ## 📈 Analysis Process
@@ -587,37 +757,19 @@ def definitions_page():
        - Fetches daily price data based on selected lookback period
        - Available periods: 1D, 5D, 1M, 6M, 1Y, 5Y
     
-    2. **Indicator Calculation:**
-       - Calculates RSI, MACD, and Bollinger Bands using the formulas above
-       - Uses the `ta` (Technical Analysis) library for accurate calculations
+    2. **Portfolio Analysis:**
+       - Checks current portfolio positions for sell signals
+       - Requires any 2 out of 3 sell conditions to trigger
     
-    3. **Signal Generation:**
-       - Checks all three conditions (RSI, MACD, Bollinger Bands)
-       - Generates buy signal only when all conditions are met
+    3. **S&P 500 Analysis:**
+       - Analyzes all S&P 500 stocks for buy signals
+       - Requires all 3 buy conditions to trigger
     
     4. **Results Display:**
        - Shows detailed analysis for each stock
        - Displays current values for all indicators
        - Highlights which conditions are met (✅) or not met (❌)
-    
-    ## 📝 Example Analysis Output
-    ```
-    Analysis Report for AAPL
-    ==================================================
-    Date Range: 2024-02-15 to 2024-03-15 (30 trading days)
-    
-    Buy Conditions (2/3):
-    1. RSI < 30: ✅
-       Current RSI: 28.45
-    
-    2. MACD Bullish Crossover: ✅
-       MACD: -0.5432
-       Signal: -0.6543
-    
-    3. Price Below BB: ❌
-       Price: $172.50
-       Lower BB: $170.25
-    ```
+       - Separate tables for buy and sell signals
     """)
 
 def portfolio_page():
