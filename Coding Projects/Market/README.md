@@ -1,146 +1,126 @@
 # EOD Stock Analysis Platform
 
-A comprehensive stock analysis and portfolio management platform built with Streamlit, featuring technical analysis, S&P 500 screening, and portfolio tracking.
+A comprehensive stock analysis and portfolio management platform that combines technical analysis with portfolio tracking capabilities.
 
-## 🚀 Features
+## Features
 
-### 1. Stock Search and Analysis
-- Individual stock lookup with customizable time periods
-- Interactive candlestick charts
-- Real-time price and volume metrics
-- Data powered by Yahoo Finance
+### 1. Stock Analysis
+- **Technical Analysis**: Advanced scoring system using multiple indicators
+- **Buy Signals**: 20-point scoring system with 11 different conditions
+- **Sell Signals**: 17-point scoring system with 10 different conditions
+- **Real-time Data**: Integration with Alpaca API and Yahoo Finance fallback
+- **S&P 500 Coverage**: Analyze all S&P 500 stocks simultaneously
 
-### 2. S&P 500 Analysis
-- Bulk analysis of all S&P 500 stocks
-- Multiple lookback periods (1D, 5D, 1M, 6M, 1Y, 5Y)
-- Technical indicator calculations
-- Buy and sell signal detection
-- Portfolio position monitoring
-- Data powered by Alpaca API
+### 2. Portfolio Management
+- **Transaction Tracking**: Log buy and sell transactions with detailed metrics
+- **Performance Analytics**: Track win rate, total profit/loss, and average returns
+- **Signal Analysis**: Monitor buy/sell signal scores for each position
+- **Historical Analysis**: View complete transaction history with signal details
 
-### 3. Portfolio Management
-- Track stock purchases and sales
-- Log transactions with precise share amounts
-- Calculate profits/losses and returns
-- Monitor win rate and performance metrics
-- Export transaction history
-- Persistent data storage in JSON format
-- Automated sell signal detection for portfolio positions
+### 3. Technical Indicators
+- **Core Indicators**:
+  - RSI (Relative Strength Index)
+  - MACD (Moving Average Convergence Divergence)
+  - Bollinger Bands
+- **Enhanced Indicators**:
+  - EMA 9/21 Crossovers
+  - Stochastic RSI
+  - OBV (On Balance Volume)
+  - CCI (Commodity Channel Index)
+  - ATR (Average True Range)
+  - Volume Moving Averages
 
-### 4. Technical Analysis
-Three key technical indicators used for signals:
+## Setup
 
-1. **RSI (Relative Strength Index)**
-   - 14-day period
-   - Buy signal when RSI < 30 (oversold)
-   - Sell signal when RSI > 70 (overbought)
-
-2. **MACD (Moving Average Convergence Divergence)**
-   - Fast EMA: 12 days
-   - Slow EMA: 26 days
-   - Signal Line: 9-day EMA
-   - Buy signal on bullish crossover
-   - Sell signal on bearish crossover
-
-3. **Bollinger Bands**
-   - 20-day SMA with 2 standard deviations
-   - Buy signal when price is below lower band
-   - Sell signal when price is above upper band
-
-## 📋 Requirements
-
-```
-streamlit
-pandas
-yfinance
-plotly
-numpy
-python-dotenv
-alpaca-trade-api==3.0.2
-ta
-```
-
-## 🔧 Setup
-
-1. Clone the repository
-2. Install dependencies:
+1. **Environment Setup**
    ```bash
+   # Create and activate virtual environment
+   python -m venv venv
+   source venv/bin/activate  # On Windows: venv\Scripts\activate
+   
+   # Install dependencies
    pip install -r requirements.txt
    ```
-3. Create a `.env` file with your Alpaca API credentials:
+
+2. **API Configuration**
+   Create a `.env` file with your Alpaca API credentials:
    ```
    ALPACA_API_KEY=your_api_key
    ALPACA_API_SECRET=your_api_secret
-   ALPACA_API_BASE_URL=https://paper-api.alpaca.markets
+   ALPACA_API_BASE_URL=your_api_base_url
    ```
 
-## 🚀 Usage
-
-1. Run the application:
+3. **Run the Application**
    ```bash
    streamlit run app.py
    ```
 
-2. Navigate through the different pages:
-   - **Search**: Look up individual stocks
-   - **Analyze**: Screen S&P 500 stocks for buy signals and portfolio positions for sell signals
-   - **Portfolio**: Manage your stock positions
-   - **Definitions**: Learn about technical indicators
+## Usage
 
-## 📊 Signal Criteria
+### Search Page
+- Search individual stocks
+- View detailed price charts
+- Analyze technical indicators
+- Monitor real-time metrics
 
-### Buy Signals
-A stock generates a buy signal when ALL three conditions are met:
-1. RSI is below 30 (oversold condition)
-2. MACD shows a bullish crossover
-3. Price is below the lower Bollinger Band
+### Analyze Page
+- Scan entire S&P 500 for opportunities
+- View buy signals (score ≥ 13)
+- Monitor sell signals (score ≥ 11)
+- Download analysis results
 
-### Sell Signals
-A stock generates a sell signal when ANY TWO of these conditions are met:
-1. RSI is above 70 (overbought condition)
-2. MACD shows a bearish crossover
-3. Price is above the upper Bollinger Band
+### Portfolio Page
+- Log buy and sell transactions
+- Track current positions
+- Monitor portfolio performance
+- View transaction history
+- Analyze signal effectiveness
 
-## 💼 Portfolio Management
+### Definitions Page
+- Detailed explanation of indicators
+- Signal criteria and thresholds
+- Technical analysis formulas
+- Interpretation guidelines
 
-- **Log Buys**: Record stock purchases with:
-  - Symbol
-  - Number of shares (up to 5 decimal places)
-  - Purchase price
-  - Buy date
+## Signal System
 
-- **Log Sells**: Record stock sales with:
-  - Select position from portfolio
-  - Sell price
-  - Sell date
+### Buy Signals (20-point scale)
+1. RSI < 30 (3 points)
+2. MACD Bullish Crossover (3 points)
+3. Price below BB (2 points)
+4. EMA 9/21 Bullish Crossover (2 points)
+5. High Volume (2 points)
+6. Stochastic RSI < 20 & Rising (1 point)
+7. OBV Upward Trend (1 point)
+8. CCI < -100 (1 point)
+9. ATR Increasing (1 point)
+10. Bullish Candlestick (2 points)
+11. Additional Volume Analysis (2 points)
 
-- **Track Performance**:
-  - Win rate
-  - Total profit/loss
-  - Number of trades
-  - Complete transaction history
+### Sell Signals (17-point scale)
+1. RSI > 70 (3 points)
+2. MACD Bearish Crossover (3 points)
+3. Price above BB (2 points)
+4. EMA 9/21 Bearish Crossover (2 points)
+5. Volume Spike on Down Candle (2 points)
+6. Stochastic RSI > 80 & Falling (1 point)
+7. OBV Falling (1 point)
+8. CCI > 100 (1 point)
+9. Bearish Candlestick (2 points)
 
-## 💾 Data Storage
+## Data Storage
+- Portfolio data stored in `data/portfolio.json`
+- Transaction history stored in `data/transactions.json`
+- Automatic data persistence between sessions
 
-Portfolio data is stored locally in JSON format:
-- `data/portfolio.json`: Current positions
-- `data/transactions.json`: Historical transactions
+## Dependencies
+- streamlit
+- pandas
+- yfinance
+- plotly
+- alpaca-trade-api
+- ta (Technical Analysis library)
+- python-dotenv
 
-## 📈 Analysis Output
-
-Detailed analysis reports include:
-- Date range and trading days
-- Current price and period change
-- Technical indicator values
-- Buy/Sell condition status
-- Final signal determination
-
-## ⚠️ Notes
-
-- Free Alpaca API accounts have limitations on data access
-- Some features require active internet connection
-- Historical data availability may vary by stock and time period
-
-## License
-
-This project is licensed under the MIT License - see the LICENSE file for details. 
+## Contributing
+Feel free to submit issues and enhancement requests! 

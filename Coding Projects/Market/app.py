@@ -32,17 +32,17 @@ def load_portfolio_data():
             with open(PORTFOLIO_FILE, 'r') as f:
                 portfolio_data = json.load(f)
                 portfolio_df = pd.DataFrame(portfolio_data) if portfolio_data else pd.DataFrame(
-                    columns=['ID', 'Symbol', 'Shares', 'Buy Price', 'Buy Date', 'Total Cost'])
+                    columns=['ID', 'Symbol', 'Shares', 'Buy Price', 'Buy Date', 'Total Cost', 'Buy Score', 'Buy Conditions'])
         else:
-            portfolio_df = pd.DataFrame(columns=['ID', 'Symbol', 'Shares', 'Buy Price', 'Buy Date', 'Total Cost'])
+            portfolio_df = pd.DataFrame(columns=['ID', 'Symbol', 'Shares', 'Buy Price', 'Buy Date', 'Total Cost', 'Buy Score', 'Buy Conditions'])
         
         if TRANSACTIONS_FILE.exists():
             with open(TRANSACTIONS_FILE, 'r') as f:
                 transactions_data = json.load(f)
                 transactions_df = pd.DataFrame(transactions_data) if transactions_data else pd.DataFrame(
-                    columns=['ID', 'Symbol', 'Shares', 'Buy Price', 'Sell Price', 'Buy Date', 'Sell Date', 'Profit/Loss', 'Return %'])
+                    columns=['ID', 'Symbol', 'Shares', 'Buy Price', 'Sell Price', 'Buy Date', 'Sell Date', 'Profit/Loss', 'Return %', 'Buy Score', 'Sell Score', 'Buy Conditions', 'Sell Conditions'])
         else:
-            transactions_df = pd.DataFrame(columns=['ID', 'Symbol', 'Shares', 'Buy Price', 'Sell Price', 'Buy Date', 'Sell Date', 'Profit/Loss', 'Return %'])
+            transactions_df = pd.DataFrame(columns=['ID', 'Symbol', 'Shares', 'Buy Price', 'Sell Price', 'Buy Date', 'Sell Date', 'Profit/Loss', 'Return %', 'Buy Score', 'Sell Score', 'Buy Conditions', 'Sell Conditions'])
         
         # Calculate statistics
         total_profit = transactions_df['Profit/Loss'].sum() if not transactions_df.empty else 0.0
@@ -53,8 +53,8 @@ def load_portfolio_data():
     
     except Exception as e:
         st.error(f"Error loading portfolio data: {str(e)}")
-        return (pd.DataFrame(columns=['ID', 'Symbol', 'Shares', 'Buy Price', 'Buy Date', 'Total Cost']),
-                pd.DataFrame(columns=['ID', 'Symbol', 'Shares', 'Buy Price', 'Sell Price', 'Buy Date', 'Sell Date', 'Profit/Loss', 'Return %']),
+        return (pd.DataFrame(columns=['ID', 'Symbol', 'Shares', 'Buy Price', 'Buy Date', 'Total Cost', 'Buy Score', 'Buy Conditions']),
+                pd.DataFrame(columns=['ID', 'Symbol', 'Shares', 'Buy Price', 'Sell Price', 'Buy Date', 'Sell Date', 'Profit/Loss', 'Return %', 'Buy Score', 'Sell Score', 'Buy Conditions', 'Sell Conditions']),
                 0.0, 0, 0)
 
 def save_portfolio_data(portfolio_df, transactions_df):
@@ -81,6 +81,8 @@ if 'buy_signals' not in st.session_state:
     st.session_state.buy_signals = None
 if 'sell_signals' not in st.session_state:
     st.session_state.sell_signals = None
+if 'near_buy_signals_data' not in st.session_state:
+    st.session_state.near_buy_signals_data = None
 if 'last_analysis_time' not in st.session_state:
     st.session_state.last_analysis_time = None
 if 'search_symbol' not in st.session_state:
@@ -111,6 +113,8 @@ if 'buy_signals' not in st.session_state:
     st.session_state.buy_signals = None
 if 'sell_signals' not in st.session_state:
     st.session_state.sell_signals = None
+if 'near_buy_signals_data' not in st.session_state:
+    st.session_state.near_buy_signals_data = None
 if 'last_analysis_time' not in st.session_state:
     st.session_state.last_analysis_time = None
 if 'search_symbol' not in st.session_state:
@@ -202,29 +206,175 @@ def calculate_technical_indicators(df):
     
     return df
 
+def calculate_enhanced_indicators(df):
+    """Calculate additional technical indicators for the scoring system."""
+    # Calculate EMAs
+    df['EMA_9'] = ta.trend.EMAIndicator(df['close'], window=9).ema_indicator()
+    df['EMA_21'] = ta.trend.EMAIndicator(df['close'], window=21).ema_indicator()
+    
+    # Calculate Stochastic RSI
+    stoch_rsi = ta.momentum.StochRSIIndicator(df['close'])
+    df['Stoch_RSI'] = stoch_rsi.stochrsi()
+    
+    # Calculate OBV (On Balance Volume)
+    df['OBV'] = ta.volume.OnBalanceVolumeIndicator(df['close'], df['volume']).on_balance_volume()
+    
+    # Calculate CCI (Commodity Channel Index)
+    df['CCI'] = ta.trend.CCIIndicator(df['high'], df['low'], df['close']).cci()
+    
+    # Calculate ATR (Average True Range)
+    df['ATR'] = ta.volatility.AverageTrueRange(df['high'], df['low'], df['close']).average_true_range()
+    
+    # Calculate Volume MA
+    df['Volume_MA20'] = df['volume'].rolling(window=20).mean()
+    
+    return df
+
+def calculate_buy_score(df):
+    """Calculate buy signal score based on technical indicators."""
+    score = 0
+    conditions_met = []
+    
+    # RSI < 30
+    if df['RSI'].iloc[-1] < 30:
+        score += 3
+        conditions_met.append("RSI < 30")
+    
+    # MACD Bullish Crossover
+    macd_prev = df['MACD'].iloc[-2] - df['MACD_Signal'].iloc[-2]
+    macd_curr = df['MACD'].iloc[-1] - df['MACD_Signal'].iloc[-1]
+    if macd_prev < 0 and macd_curr > 0:
+        score += 3
+        conditions_met.append("MACD Bullish Crossover")
+    
+    # Price below lower Bollinger Band
+    if df['close'].iloc[-1] < df['BB_lower'].iloc[-1]:
+        score += 2
+        conditions_met.append("Price below BB")
+    
+    # EMA 9/21 Bullish Crossover
+    ema_prev = df['EMA_9'].iloc[-2] - df['EMA_21'].iloc[-2]
+    ema_curr = df['EMA_9'].iloc[-1] - df['EMA_21'].iloc[-1]
+    if ema_prev < 0 and ema_curr > 0:
+        score += 2
+        conditions_met.append("EMA Bullish Crossover")
+    
+    # Volume > 1.5x 20-day average
+    if df['volume'].iloc[-1] > df['Volume_MA20'].iloc[-1] * 1.5:
+        score += 2
+        conditions_met.append("High Volume")
+    
+    # Stochastic RSI < 20 and rising
+    if df['Stoch_RSI'].iloc[-1] < 0.2 and df['Stoch_RSI'].iloc[-1] > df['Stoch_RSI'].iloc[-2]:
+        score += 1
+        conditions_met.append("Stoch RSI < 20 & Rising")
+    
+    # OBV trending upward
+    if df['OBV'].iloc[-1] > df['OBV'].iloc[-2] > df['OBV'].iloc[-3]:
+        score += 1
+        conditions_met.append("OBV Upward Trend")
+    
+    # CCI below -100
+    if df['CCI'].iloc[-1] < -100:
+        score += 1
+        conditions_met.append("CCI < -100")
+    
+    # ATR increasing
+    if df['ATR'].iloc[-1] > df['ATR'].iloc[-2]:
+        score += 1
+        conditions_met.append("ATR Increasing")
+    
+    # Candlestick patterns (simplified check for bullish reversal)
+    if (df['close'].iloc[-1] > df['open'].iloc[-1] and  # Bullish candle
+        df['close'].iloc[-1] > df['close'].iloc[-2]):   # Higher close than previous
+        score += 2
+        conditions_met.append("Bullish Candlestick")
+    
+    return score, conditions_met
+
+def calculate_sell_score(df):
+    """Calculate sell signal score based on technical indicators."""
+    score = 0
+    conditions_met = []
+    
+    # RSI > 70
+    if df['RSI'].iloc[-1] > 70:
+        score += 3
+        conditions_met.append("RSI > 70")
+    
+    # MACD Bearish Crossover
+    macd_prev = df['MACD'].iloc[-2] - df['MACD_Signal'].iloc[-2]
+    macd_curr = df['MACD'].iloc[-1] - df['MACD_Signal'].iloc[-1]
+    if macd_prev > 0 and macd_curr < 0:
+        score += 3
+        conditions_met.append("MACD Bearish Crossover")
+    
+    # Price above upper Bollinger Band
+    if df['close'].iloc[-1] > df['BB_upper'].iloc[-1]:
+        score += 2
+        conditions_met.append("Price above BB")
+    
+    # EMA 9/21 Bearish Crossover
+    ema_prev = df['EMA_9'].iloc[-2] - df['EMA_21'].iloc[-2]
+    ema_curr = df['EMA_9'].iloc[-1] - df['EMA_21'].iloc[-1]
+    if ema_prev > 0 and ema_curr < 0:
+        score += 2
+        conditions_met.append("EMA Bearish Crossover")
+    
+    # Volume spike on down candle
+    if (df['close'].iloc[-1] < df['open'].iloc[-1] and 
+        df['volume'].iloc[-1] > df['Volume_MA20'].iloc[-1] * 1.5):
+        score += 2
+        conditions_met.append("Volume Spike on Down Candle")
+    
+    # Stochastic RSI > 80 and falling
+    if df['Stoch_RSI'].iloc[-1] > 0.8 and df['Stoch_RSI'].iloc[-1] < df['Stoch_RSI'].iloc[-2]:
+        score += 1
+        conditions_met.append("Stoch RSI > 80 & Falling")
+    
+    # OBV falling
+    if df['OBV'].iloc[-1] < df['OBV'].iloc[-2] < df['OBV'].iloc[-3]:
+        score += 1
+        conditions_met.append("OBV Falling")
+    
+    # CCI above +100
+    if df['CCI'].iloc[-1] > 100:
+        score += 1
+        conditions_met.append("CCI > 100")
+    
+    # Candlestick patterns (simplified check for bearish reversal)
+    if (df['close'].iloc[-1] < df['open'].iloc[-1] and  # Bearish candle
+        df['close'].iloc[-1] < df['close'].iloc[-2]):   # Lower close than previous
+        score += 2
+        conditions_met.append("Bearish Candlestick")
+    
+    return score, conditions_met
+
 def check_buy_conditions(df, symbol):
     if len(df) < 2:  # Need at least 2 data points for MACD crossover
         print(f"\n{symbol}: Insufficient data points (need at least 2, got {len(df)})")
-        return False
+        return False, 0, []
     
     # Get date range info
     start_date = df.index[0].strftime('%Y-%m-%d')
     end_date = df.index[-1].strftime('%Y-%m-%d')
     total_days = len(df)
-        
-    # Check RSI < 30 (Oversold)
-    rsi_condition = df['RSI'].iloc[-1] < 30
     
-    # Check MACD bullish crossover (MACD line crosses above signal line)
+    # Calculate enhanced indicators
+    df = calculate_enhanced_indicators(df)
+    
+    # Check original conditions
+    rsi_condition = df['RSI'].iloc[-1] < 30
     macd_prev = df['MACD'].iloc[-2] - df['MACD_Signal'].iloc[-2]
     macd_curr = df['MACD'].iloc[-1] - df['MACD_Signal'].iloc[-1]
     macd_condition = macd_prev < 0 and macd_curr > 0
-    
-    # Check if price is below lower Bollinger Band
     bb_condition = df['close'].iloc[-1] < df['BB_lower'].iloc[-1]
     
+    # Calculate score
+    score, conditions_met = calculate_buy_score(df)
+    
     # Count conditions met
-    conditions_met = sum([rsi_condition, macd_condition, bb_condition])
+    conditions_met_count = sum([rsi_condition, macd_condition, bb_condition])
     
     # Print detailed analysis
     print(f"\n{'='*50}")
@@ -237,7 +387,7 @@ def check_buy_conditions(df, symbol):
     print(f"Previous Close: ${df['close'].iloc[-2]:.2f}")
     print(f"Period Change: {((df['close'].iloc[-1] - df['close'].iloc[0]) / df['close'].iloc[0] * 100):.2f}%")
     
-    print(f"\nBuy Conditions ({conditions_met}/3):")
+    print(f"\nOriginal Buy Conditions ({conditions_met_count}/3):")
     print(f"1. RSI < 30: {'✅' if rsi_condition else '❌'}")
     print(f"   Current RSI: {df['RSI'].iloc[-1]:.2f}")
     print(f"   Previous RSI: {df['RSI'].iloc[-2]:.2f}")
@@ -253,35 +403,48 @@ def check_buy_conditions(df, symbol):
     print(f"   Lower BB: ${df['BB_lower'].iloc[-1]:.2f}")
     print(f"   Distance from BB: ${abs(df['close'].iloc[-1] - df['BB_lower'].iloc[-1]):.2f}")
     
-    print(f"\nFinal Result: {'🎯 BUY SIGNAL' if (rsi_condition and macd_condition and bb_condition) else '⏳ NO SIGNAL'}")
+    print(f"\nEnhanced Scoring System (Score: {score}/20):")
+    print("Conditions Met:")
+    for condition in conditions_met:
+        print(f"✅ {condition}")
+    
+    # Return both original and enhanced signals
+    original_signal = rsi_condition and macd_condition and bb_condition
+    enhanced_signal = score >= 12
+    
+    print(f"\nFinal Results:")
+    print(f"Original System: {'🎯 BUY SIGNAL' if original_signal else '⏳ NO SIGNAL'}")
+    print(f"Enhanced System: {'🎯 BUY SIGNAL' if enhanced_signal else '⏳ NO SIGNAL'}")
     print(f"{'='*50}\n")
     
-    return rsi_condition and macd_condition and bb_condition
+    return original_signal or enhanced_signal, score, conditions_met
 
 def check_sell_conditions(df, symbol):
     """Check if a stock meets the sell conditions."""
     if len(df) < 2:  # Need at least 2 data points for MACD crossover
         print(f"\n{symbol}: Insufficient data points (need at least 2, got {len(df)})")
-        return False
+        return False, 0, []
     
     # Get date range info
     start_date = df.index[0].strftime('%Y-%m-%d')
     end_date = df.index[-1].strftime('%Y-%m-%d')
     total_days = len(df)
-        
-    # Check RSI > 70 (Overbought)
-    rsi_condition = df['RSI'].iloc[-1] > 70
     
-    # Check MACD bearish crossover (MACD line crosses below signal line)
+    # Calculate enhanced indicators
+    df = calculate_enhanced_indicators(df)
+    
+    # Check original conditions
+    rsi_condition = df['RSI'].iloc[-1] > 70
     macd_prev = df['MACD'].iloc[-2] - df['MACD_Signal'].iloc[-2]
     macd_curr = df['MACD'].iloc[-1] - df['MACD_Signal'].iloc[-1]
     macd_condition = macd_prev > 0 and macd_curr < 0
-    
-    # Check if price is above upper Bollinger Band
     bb_condition = df['close'].iloc[-1] > df['BB_upper'].iloc[-1]
     
+    # Calculate score
+    score, conditions_met = calculate_sell_score(df)
+    
     # Count conditions met (need 2 out of 3)
-    conditions_met = sum([rsi_condition, macd_condition, bb_condition])
+    conditions_met_count = sum([rsi_condition, macd_condition, bb_condition])
     
     # Print detailed analysis
     print(f"\n{'='*50}")
@@ -294,7 +457,7 @@ def check_sell_conditions(df, symbol):
     print(f"Previous Close: ${df['close'].iloc[-2]:.2f}")
     print(f"Period Change: {((df['close'].iloc[-1] - df['close'].iloc[0]) / df['close'].iloc[0] * 100):.2f}%")
     
-    print(f"\nSell Conditions ({conditions_met}/3, need 2/3):")
+    print(f"\nOriginal Sell Conditions ({conditions_met_count}/3, need 2/3):")
     print(f"1. RSI > 70: {'✅' if rsi_condition else '❌'}")
     print(f"   Current RSI: {df['RSI'].iloc[-1]:.2f}")
     print(f"   Previous RSI: {df['RSI'].iloc[-2]:.2f}")
@@ -310,23 +473,39 @@ def check_sell_conditions(df, symbol):
     print(f"   Upper BB: ${df['BB_upper'].iloc[-1]:.2f}")
     print(f"   Distance from BB: ${abs(df['close'].iloc[-1] - df['BB_upper'].iloc[-1]):.2f}")
     
-    print(f"\nFinal Result: {'🔴 SELL SIGNAL' if conditions_met >= 2 else '⏳ NO SIGNAL'}")
+    print(f"\nEnhanced Scoring System (Score: {score}/17):")
+    print("Conditions Met:")
+    for condition in conditions_met:
+        print(f"✅ {condition}")
+    
+    # Return both original and enhanced signals
+    original_signal = conditions_met_count >= 2
+    enhanced_signal = score >= 10
+    
+    print(f"\nFinal Results:")
+    print(f"Original System: {'🔴 SELL SIGNAL' if original_signal else '⏳ NO SIGNAL'}")
+    print(f"Enhanced System: {'🔴 SELL SIGNAL' if enhanced_signal else '⏳ NO SIGNAL'}")
     print(f"{'='*50}\n")
     
-    return conditions_met >= 2
+    return original_signal or enhanced_signal, score, conditions_met
 
 def search_page():
     st.markdown("""
-    Search and analyze individual stocks using Yahoo Finance data.
+    Search and analyze individual stocks using market data.
     """)
     
     # Search inputs with session state
     symbol = st.text_input("Enter Stock Symbol", value=st.session_state.search_symbol).upper()
-    period = st.selectbox(
+    
+    # Convert period options to more appropriate names for Alpaca
+    period_options = {"1 Month": "1mo", "3 Months": "3mo", "6 Months": "6mo", 
+                     "1 Year": "1y", "2 Years": "2y", "5 Years": "5y"}
+    period_display = st.selectbox(
         "Select Time Period",
-        options=["1mo", "3mo", "6mo", "1y", "2y", "5y"],
-        index=["1mo", "3mo", "6mo", "1y", "2y", "5y"].index(st.session_state.search_period)
+        options=list(period_options.keys()),
+        index=list(period_options.values()).index(st.session_state.search_period) if st.session_state.search_period in period_options.values() else 2
     )
+    period = period_options[period_display]
 
     # Add refresh button and last search time display
     col1, col2 = st.columns([2,3])
@@ -342,11 +521,57 @@ def search_page():
 
     if search_button or st.session_state.search_data is None:
         try:
-            # Fetch stock data from Yahoo Finance
-            stock = yf.Ticker(symbol)
-            hist = stock.history(period=period)
+            # Calculate start date based on period
+            end_date = datetime.now()
+            if period == "1mo":
+                start_date = end_date - timedelta(days=30)
+            elif period == "3mo":
+                start_date = end_date - timedelta(days=90)
+            elif period == "6mo":
+                start_date = end_date - timedelta(days=180)
+            elif period == "1y":
+                start_date = end_date - timedelta(days=365)
+            elif period == "2y":
+                start_date = end_date - timedelta(days=365*2)
+            else:  # 5y
+                start_date = end_date - timedelta(days=365*5)
             
-            if hist.empty:
+            # First try with Alpaca
+            hist = None
+            alpaca_error = None
+            
+            try:
+                hist = api.get_bars(
+                    symbol,
+                    '1D',  # Daily bars
+                    start=start_date.strftime('%Y-%m-%d'),
+                    adjustment='raw'
+                ).df
+                
+                # Rename columns to match yfinance format
+                if not hist.empty:
+                    hist = hist.rename(columns={
+                        'open': 'Open',
+                        'high': 'High',
+                        'low': 'Low',
+                        'close': 'Close',
+                        'volume': 'Volume'
+                    })
+                    data_source = "Alpaca API"
+            except Exception as api_error:
+                alpaca_error = str(api_error)
+                st.warning(f"Alpaca API error: {alpaca_error}. Falling back to Yahoo Finance...")
+                
+                # Fall back to yfinance if Alpaca fails
+                try:
+                    stock = yf.Ticker(symbol)
+                    hist = stock.history(period=period)
+                    data_source = "Yahoo Finance"
+                except Exception as yf_error:
+                    st.error(f"Also failed with Yahoo Finance: {str(yf_error)}")
+                    return
+            
+            if hist is None or hist.empty:
                 st.warning(f"No data available for {symbol}. The symbol might be delisted or incorrect.")
             else:
                 # Store data in session state
@@ -354,7 +579,7 @@ def search_page():
                 st.session_state.search_time = datetime.now()
                 
                 # Display basic stock info
-                st.subheader(f"{symbol} Stock Analysis")
+                st.subheader(f"{symbol} Stock Analysis (Data Source: {data_source})")
                 
                 # Create price chart
                 fig = go.Figure(data=[go.Candlestick(x=hist.index,
@@ -376,12 +601,15 @@ def search_page():
                 col1, col2, col3 = st.columns(3)
                 
                 with col1:
-                    st.metric("Current Price", f"${hist['Close'][-1]:.2f}")
+                    st.metric("Current Price", f"${hist['Close'].iloc[-1]:.2f}")
                 with col2:
-                    daily_return = ((hist['Close'][-1] - hist['Close'][-2])/hist['Close'][-2]) * 100
-                    st.metric("Daily Return", f"{daily_return:.2f}%")
+                    if len(hist) > 1:
+                        daily_return = ((hist['Close'].iloc[-1] - hist['Close'].iloc[-2])/hist['Close'].iloc[-2]) * 100
+                        st.metric("Daily Return", f"{daily_return:.2f}%")
+                    else:
+                        st.metric("Daily Return", "N/A")
                 with col3:
-                    volume = hist['Volume'][-1]
+                    volume = hist['Volume'].iloc[-1]
                     st.metric("Volume", f"{volume:,.0f}")
                     
         except Exception as e:
@@ -416,12 +644,15 @@ def search_page():
         col1, col2, col3 = st.columns(3)
         
         with col1:
-            st.metric("Current Price", f"${hist['Close'][-1]:.2f}")
+            st.metric("Current Price", f"${hist['Close'].iloc[-1]:.2f}")
         with col2:
-            daily_return = ((hist['Close'][-1] - hist['Close'][-2])/hist['Close'][-2]) * 100
-            st.metric("Daily Return", f"{daily_return:.2f}%")
+            if len(hist) > 1:
+                daily_return = ((hist['Close'].iloc[-1] - hist['Close'].iloc[-2])/hist['Close'].iloc[-2]) * 100
+                st.metric("Daily Return", f"{daily_return:.2f}%")
+            else:
+                st.metric("Daily Return", "N/A")
         with col3:
-            volume = hist['Volume'][-1]
+            volume = hist['Volume'].iloc[-1]
             st.metric("Volume", f"{volume:,.0f}")
 
 def analyze_page():
@@ -455,8 +686,9 @@ def analyze_page():
         with st.spinner("Analyzing stocks..."):
             results = []
             sell_signals = []
-            portfolio_analysis = []  # New list to store all portfolio stock analysis
+            portfolio_analysis = []
             buy_signals = []
+            near_buy_signals_data = []
             
             # Progress bar
             progress_bar = st.progress(0)
@@ -468,13 +700,10 @@ def analyze_page():
             if not st.session_state.portfolio.empty:
                 portfolio_symbols = st.session_state.portfolio['Symbol'].unique()
                 
-                print("\n\n" + "="*80)
-                print("ANALYZING PORTFOLIO POSITIONS FOR SELL SIGNALS")
-                print("="*80 + "\n")
-                
                 for symbol in portfolio_symbols:
                     try:
-                        # Use the same start_date as defined above instead of recalculating
+                        time.sleep(0.2)  # Rate limiting delay
+                        
                         bars = api.get_bars(
                             symbol,
                             '1D',
@@ -484,57 +713,63 @@ def analyze_page():
                         
                         if not bars.empty:
                             df = calculate_technical_indicators(bars)
+                            df = calculate_enhanced_indicators(df)
                             
-                            # Calculate conditions
-                            rsi_condition = df['RSI'].iloc[-1] > 70
-                            macd_prev = df['MACD'].iloc[-2] - df['MACD_Signal'].iloc[-2]
-                            macd_curr = df['MACD'].iloc[-1] - df['MACD_Signal'].iloc[-1]
-                            macd_condition = macd_prev > 0 and macd_curr < 0
-                            bb_condition = df['close'].iloc[-1] > df['BB_upper'].iloc[-1]
-                            conditions_met = sum([rsi_condition, macd_condition, bb_condition])
+                            # Calculate sell score and conditions
+                            sell_score, sell_conditions = calculate_sell_score(df)
                             
-                            # Add to portfolio analysis regardless of sell conditions
+                            # Add to portfolio analysis
                             portfolio_analysis.append({
                                 'Symbol': symbol,
                                 'Current Price': df['close'].iloc[-1],
                                 'RSI': df['RSI'].iloc[-1],
-                                'RSI Condition': "✅" if rsi_condition else "❌",
+                                'RSI > 70': "✅" if df['RSI'].iloc[-1] > 70 else "❌",
                                 'MACD Diff': df['MACD'].iloc[-1] - df['MACD_Signal'].iloc[-1],
-                                'MACD Crossover': "✅" if macd_condition else "❌",
+                                'MACD Bearish': "✅" if (df['MACD'].iloc[-2] - df['MACD_Signal'].iloc[-2] > 0 and 
+                                                      df['MACD'].iloc[-1] - df['MACD_Signal'].iloc[-1] < 0) else "❌",
                                 'BB Distance': df['close'].iloc[-1] - df['BB_upper'].iloc[-1],
-                                'BB Condition': "✅" if bb_condition else "❌",
-                                'Conditions Met': f"{conditions_met}/3",
-                                'Sell Signal': "🔴 SELL" if conditions_met >= 2 else "⏳ HOLD"
+                                'Price > BB': "✅" if df['close'].iloc[-1] > df['BB_upper'].iloc[-1] else "❌",
+                                'EMA Crossover': "✅" if (df['EMA_9'].iloc[-2] - df['EMA_21'].iloc[-2] > 0 and 
+                                                      df['EMA_9'].iloc[-1] - df['EMA_21'].iloc[-1] < 0) else "❌",
+                                'Volume Spike': "✅" if (df['close'].iloc[-1] < df['open'].iloc[-1] and 
+                                                     df['volume'].iloc[-1] > df['Volume_MA20'].iloc[-1] * 1.5) else "❌",
+                                'Stoch RSI': "✅" if (df['Stoch_RSI'].iloc[-1] > 0.8 and 
+                                                  df['Stoch_RSI'].iloc[-1] < df['Stoch_RSI'].iloc[-2]) else "❌",
+                                'OBV Trend': "✅" if (df['OBV'].iloc[-1] < df['OBV'].iloc[-2] < df['OBV'].iloc[-3]) else "❌",
+                                'CCI > 100': "✅" if df['CCI'].iloc[-1] > 100 else "❌",
+                                'Bearish Candle': "✅" if (df['close'].iloc[-1] < df['open'].iloc[-1] and 
+                                                       df['close'].iloc[-1] < df['close'].iloc[-2]) else "❌",
+                                'Sell Score': sell_score,
+                                'Signal': "🔴 SELL" if sell_score >= 11 else "⏳ HOLD"
                             })
                             
-                            # Still add to sell signals if criteria met
-                            if check_sell_conditions(df, symbol):
+                            # Add to sell signals if score is high enough
+                            if sell_score >= 11:
                                 sell_signals.append({
                                     'Symbol': symbol,
                                     'Current Price': df['close'].iloc[-1],
                                     'RSI': df['RSI'].iloc[-1],
                                     'MACD Diff': df['MACD'].iloc[-1] - df['MACD_Signal'].iloc[-1],
-                                    'BB Distance': df['close'].iloc[-1] - df['BB_upper'].iloc[-1]
+                                    'BB Distance': df['close'].iloc[-1] - df['BB_upper'].iloc[-1],
+                                    'Sell Score': sell_score,
+                                    'Conditions Met': len(sell_conditions)
                                 })
                     
                     except Exception as e:
                         print(f"Error analyzing {symbol}: {str(e)}")
                         continue
             
-            # Store sell signals and portfolio analysis in session state
+            # Store sell signals and portfolio analysis
             st.session_state.sell_signals = pd.DataFrame(sell_signals) if sell_signals else None
             st.session_state.portfolio_analysis = pd.DataFrame(portfolio_analysis) if portfolio_analysis else None
             
-            # Then analyze all S&P 500 for buy signals
-            print("\n\n" + "="*80)
-            print("ANALYZING S&P 500 STOCKS FOR BUY SIGNALS")
-            print("="*80 + "\n")
-            
+            # Analyze all S&P 500 for buy signals
             symbols = get_sp500_symbols()
             
             for i, symbol in enumerate(symbols):
                 try:
-                    # Get daily bars
+                    time.sleep(0.2)  # Rate limiting delay
+                    
                     bars = api.get_bars(
                         symbol,
                         '1D',
@@ -543,58 +778,58 @@ def analyze_page():
                     ).df
                     
                     if not bars.empty:
-                        # Calculate technical indicators
                         bars = calculate_technical_indicators(bars)
+                        bars = calculate_enhanced_indicators(bars)
                         
-                        last_price = bars['close'].iloc[-1]
-                        daily_change = ((bars['close'].iloc[-1] - bars['open'].iloc[-1]) / bars['open'].iloc[-1]) * 100
-                        volume = bars['volume'].iloc[-1]
-                        period_change = ((bars['close'].iloc[-1] - bars['close'].iloc[0]) / bars['close'].iloc[0]) * 100
+                        # Calculate buy score and conditions
+                        buy_score, buy_conditions = calculate_buy_score(bars)
                         
-                        # Only print analysis if conditions are close to being met
-                        rsi = bars['RSI'].iloc[-1]
-                        macd_diff = bars['MACD'].iloc[-1] - bars['MACD_Signal'].iloc[-1]
-                        price_vs_bb = bars['close'].iloc[-1] - bars['BB_lower'].iloc[-1]
-                        
-                        # Check if worth printing (close to buy conditions)
-                        if (rsi < 35 or  # RSI close to oversold
-                            (abs(macd_diff) < 0.5) or  # MACD close to crossover
-                            (abs(price_vs_bb) < bars['close'].iloc[-1] * 0.02)):  # Price close to BB
-                            
-                            # Check buy conditions and print analysis
-                            if check_buy_conditions(bars, symbol):
-                                buy_signals.append({
-                                    'Symbol': symbol,
-                                    'Price': last_price,
-                                    'RSI': bars['RSI'].iloc[-1],
-                                    'MACD': bars['MACD'].iloc[-1],
-                                    'MACD_Signal': bars['MACD_Signal'].iloc[-1],
-                                    'BB_Lower': bars['BB_lower'].iloc[-1]
-                                })
-                        
+                        # Add to results with detailed conditions
                         results.append({
                             'Symbol': symbol,
-                            'Price': last_price,
-                            'Daily Change %': daily_change,
-                            f'{lookback} Change %': period_change,
-                            'Volume': volume,
-                            'RSI': bars['RSI'].iloc[-1]
+                            'Current Price': bars['close'].iloc[-1],
+                            'RSI': bars['RSI'].iloc[-1],
+                            'RSI < 30': "✅" if bars['RSI'].iloc[-1] < 30 else "❌",
+                            'MACD Diff': bars['MACD'].iloc[-1] - bars['MACD_Signal'].iloc[-1],
+                            'MACD Bullish': "✅" if (bars['MACD'].iloc[-2] - bars['MACD_Signal'].iloc[-2] < 0 and 
+                                                  bars['MACD'].iloc[-1] - bars['MACD_Signal'].iloc[-1] > 0) else "❌",
+                            'BB Distance': bars['close'].iloc[-1] - bars['BB_lower'].iloc[-1],
+                            'Price < BB': "✅" if bars['close'].iloc[-1] < bars['BB_lower'].iloc[-1] else "❌",
+                            'EMA Crossover': "✅" if (bars['EMA_9'].iloc[-2] - bars['EMA_21'].iloc[-2] < 0 and 
+                                                  bars['EMA_9'].iloc[-1] - bars['EMA_21'].iloc[-1] > 0) else "❌",
+                            'High Volume': "✅" if bars['volume'].iloc[-1] > bars['Volume_MA20'].iloc[-1] * 1.5 else "❌",
+                            'Stoch RSI': "✅" if (bars['Stoch_RSI'].iloc[-1] < 0.2 and 
+                                              bars['Stoch_RSI'].iloc[-1] > bars['Stoch_RSI'].iloc[-2]) else "❌",
+                            'OBV Trend': "✅" if (bars['OBV'].iloc[-1] > bars['OBV'].iloc[-2] > bars['OBV'].iloc[-3]) else "❌",
+                            'CCI < -100': "✅" if bars['CCI'].iloc[-1] < -100 else "❌",
+                            'ATR Increasing': "✅" if bars['ATR'].iloc[-1] > bars['ATR'].iloc[-2] else "❌",
+                            'Bullish Candle': "✅" if (bars['close'].iloc[-1] > bars['open'].iloc[-1] and 
+                                                   bars['close'].iloc[-1] > bars['close'].iloc[-2]) else "❌",
+                            'Buy Score': buy_score,
+                            'Signal': "🎯 BUY" if buy_score >= 13 else "⏳ HOLD"
                         })
+                        
+                        # Add to buy signals if score is high enough
+                        if buy_score >= 13:
+                            buy_signals.append({
+                                'Symbol': symbol,
+                                'Current Price': bars['close'].iloc[-1],
+                                'RSI': bars['RSI'].iloc[-1],
+                                'MACD Diff': bars['MACD'].iloc[-1] - bars['MACD_Signal'].iloc[-1],
+                                'BB Distance': bars['close'].iloc[-1] - bars['BB_lower'].iloc[-1],
+                                'Buy Score': buy_score,
+                                'Conditions Met': len(buy_conditions)
+                            })
                 
                 except Exception as e:
                     st.warning(f"Could not fetch data for {symbol}: {str(e)}")
                 
-                # Update progress
                 progress_bar.progress((i + 1) / len(symbols))
-
-            print("\n\n" + "="*80)
-            print("ANALYSIS COMPLETE")
-            print("="*80 + "\n")
 
             # Store results in session state
             if results:
                 df = pd.DataFrame(results)
-                st.session_state.sp500_data = df.sort_values('Daily Change %', ascending=False)
+                st.session_state.sp500_data = df.sort_values('Buy Score', ascending=False)
                 st.session_state.buy_signals = pd.DataFrame(buy_signals) if buy_signals else None
                 st.session_state.last_analysis_time = datetime.now()
 
@@ -610,11 +845,12 @@ def analyze_page():
             label="Download Data as CSV",
             data=csv,
             file_name="sp500_analysis.csv",
-            mime="text/csv"
+            mime="text/csv",
+            key="download_all_stocks"
         )
         
         # 2. Buy Signals
-        st.subheader("🎯 Buy Signals - Stocks Meeting All Conditions")
+        st.subheader("🎯 Buy Signals - Stocks with Score ≥ 13")
         if st.session_state.buy_signals is not None and not st.session_state.buy_signals.empty:
             st.dataframe(st.session_state.buy_signals)
             
@@ -625,13 +861,13 @@ def analyze_page():
                 data=buy_csv,
                 file_name="sp500_buy_signals.csv",
                 mime="text/csv",
-                key="buy_signals"
+                key="download_buy_signals"
             )
         else:
-            st.info("No stocks currently meet all buy conditions.")
+            st.info("No stocks currently meet the buy signal criteria (score ≥ 13).")
         
         # 3. Sell Signals
-        st.subheader("💰 Sell Signals - Portfolio Positions")
+        st.subheader("🔴 Sell Signals - Portfolio Positions with Score ≥ 11")
         if not st.session_state.portfolio.empty:
             if st.session_state.portfolio_analysis is not None and not st.session_state.portfolio_analysis.empty:
                 st.dataframe(st.session_state.portfolio_analysis)
@@ -648,7 +884,7 @@ def analyze_page():
                 
                 # Also display specific sell signals if any
                 if st.session_state.sell_signals is not None and not st.session_state.sell_signals.empty:
-                    st.subheader("🔴 Stocks Meeting Sell Criteria")
+                    st.subheader("🔴 Stocks Meeting Sell Criteria (Score ≥ 11)")
                     st.dataframe(st.session_state.sell_signals)
                     
                     # Download button for sell signals
@@ -658,7 +894,7 @@ def analyze_page():
                         data=sell_csv,
                         file_name="sell_signals.csv",
                         mime="text/csv",
-                        key="sell_signals"
+                        key="download_sell_signals"
                     )
             else:
                 st.info("No portfolio analysis available. Run the analysis to evaluate your positions.")
@@ -673,17 +909,31 @@ def definitions_page():
     
     ## 🎯 Signal Criteria
     
-    ### Buy Signals
-    A stock generates a buy signal when ALL three conditions are met simultaneously:
-    1. RSI is below 30 (oversold)
-    2. MACD shows a bullish crossover
-    3. Price is below the lower Bollinger Band
+    ### Buy Signals (20-point scale)
+    A stock generates a buy signal when it achieves a score of 13 or higher:
+    1. RSI < 30 (3 points)
+    2. MACD Bullish Crossover (3 points)
+    3. Price below BB (2 points)
+    4. EMA 9/21 Bullish Crossover (2 points)
+    5. High Volume (2 points)
+    6. Stochastic RSI < 20 & Rising (1 point)
+    7. OBV Upward Trend (1 point)
+    8. CCI < -100 (1 point)
+    9. ATR Increasing (1 point)
+    10. Bullish Candlestick (2 points)
+    11. Additional Volume Analysis (2 points)
     
-    ### Sell Signals
-    A stock generates a sell signal when ANY TWO of these three conditions are met:
-    1. RSI is above 70 (overbought)
-    2. MACD shows a bearish crossover
-    3. Price is above the upper Bollinger Band
+    ### Sell Signals (17-point scale)
+    A stock generates a sell signal when it achieves a score of 11 or higher:
+    1. RSI > 70 (3 points)
+    2. MACD Bearish Crossover (3 points)
+    3. Price above BB (2 points)
+    4. EMA 9/21 Bearish Crossover (2 points)
+    5. Volume Spike on Down Candle (2 points)
+    6. Stochastic RSI > 80 & Falling (1 point)
+    7. OBV Falling (1 point)
+    8. CCI > 100 (1 point)
+    9. Bearish Candlestick (2 points)
     
     ## 📊 Technical Indicators
     
@@ -702,11 +952,6 @@ def definitions_page():
     RS = (Average Gain over 14 days) / (Average Loss over 14 days)
     ```
     
-    **Interpretation:**
-    - RSI < 30: Oversold condition (Buy signal)
-    - RSI > 70: Overbought condition (Sell signal)
-    - RSI = 50: Neutral
-    
     ### 2. MACD (Moving Average Convergence Divergence)
     MACD shows the relationship between two moving averages of a price.
     
@@ -719,14 +964,7 @@ def definitions_page():
     ```
     MACD Line = 12-day EMA - 26-day EMA
     Signal Line = 9-day EMA of MACD Line
-    
-    where EMA = Price × (2 ÷ (n + 1)) + EMA[previous] × (1 - (2 ÷ (n + 1)))
-    n = number of days
     ```
-    
-    **Interpretation:**
-    - Bullish Crossover (Buy signal): MACD Line crosses above Signal Line
-    - Bearish Crossover (Sell signal): MACD Line crosses below Signal Line
     
     ### 3. Bollinger Bands
     Bollinger Bands measure volatility and show relative price levels.
@@ -740,30 +978,86 @@ def definitions_page():
     Middle Band = 20-day SMA
     Upper Band = Middle Band + (2 × Standard Deviation)
     Lower Band = Middle Band - (2 × Standard Deviation)
-    
-    where:
-    SMA = (P₁ + P₂ + ... + P₂₀) / 20
-    Standard Deviation = √(Σ(x - μ)² / n)
     ```
     
-    **Interpretation:**
-    - Price below Lower Band (Buy signal): Potentially oversold
-    - Price above Upper Band (Sell signal): Potentially overbought
-    - Price near Middle Band: Normal trading range
+    ### 4. EMA (Exponential Moving Average)
+    EMA gives more weight to recent prices.
+    
+    **Parameters:**
+    - EMA 9: 9-day exponential moving average
+    - EMA 21: 21-day exponential moving average
+    
+    **Formula:**
+    ```
+    EMA = Price × (2 ÷ (n + 1)) + EMA[previous] × (1 - (2 ÷ (n + 1)))
+    where n = number of days
+    ```
+    
+    ### 5. Stochastic RSI
+    Combines Stochastic oscillator with RSI to identify overbought/oversold conditions.
+    
+    **Parameters:**
+    - Period: 14 days
+    - Smoothing: 3 days
+    
+    **Formula:**
+    ```
+    StochRSI = (RSI - RSI_min) / (RSI_max - RSI_min)
+    where:
+    RSI_min = minimum RSI over period
+    RSI_max = maximum RSI over period
+    ```
+    
+    ### 6. OBV (On Balance Volume)
+    OBV measures buying and selling pressure by adding/subtracting volume based on price movement.
+    
+    **Formula:**
+    ```
+    If Close > Previous Close:
+        OBV = Previous OBV + Volume
+    If Close < Previous Close:
+        OBV = Previous OBV - Volume
+    ```
+    
+    ### 7. CCI (Commodity Channel Index)
+    CCI measures the current price level relative to an average price level.
+    
+    **Parameters:**
+    - Period: 20 days
+    - Constant: 0.015
+    
+    **Formula:**
+    ```
+    CCI = (Typical Price - SMA) / (0.015 × Mean Deviation)
+    where:
+    Typical Price = (High + Low + Close) / 3
+    ```
+    
+    ### 8. ATR (Average True Range)
+    ATR measures market volatility by decomposing the entire range of an asset price.
+    
+    **Parameters:**
+    - Period: 14 days
+    
+    **Formula:**
+    ```
+    True Range = max(High - Low, |High - Previous Close|, |Low - Previous Close|)
+    ATR = 14-day SMA of True Range
+    ```
     
     ## 📈 Analysis Process
     
     1. **Data Collection:**
        - Fetches daily price data based on selected lookback period
-       - Available periods: 1D, 5D, 1M, 6M, 1Y, 5Y
+       - Available periods: 6 Months, 1 Year, 5 Years
     
     2. **Portfolio Analysis:**
        - Checks current portfolio positions for sell signals
-       - Requires any 2 out of 3 sell conditions to trigger
+       - Requires score of 11 or higher to trigger sell signal
     
     3. **S&P 500 Analysis:**
        - Analyzes all S&P 500 stocks for buy signals
-       - Requires all 3 buy conditions to trigger
+       - Requires score of 13 or higher to trigger buy signal
     
     4. **Results Display:**
        - Shows detailed analysis for each stock
@@ -794,22 +1088,48 @@ def portfolio_page():
             submit_buy = st.form_submit_button("Log Buy")
             
             if submit_buy and buy_symbol and buy_shares and buy_price:
-                # Create unique ID for the transaction
-                transaction_id = str(uuid.uuid4())
-                
-                # Add to portfolio
-                new_position = pd.DataFrame({
-                    'ID': [transaction_id],
-                    'Symbol': [buy_symbol],
-                    'Shares': [buy_shares],
-                    'Buy Price': [buy_price],
-                    'Buy Date': [buy_date],
-                    'Total Cost': [buy_shares * buy_price]
-                })
-                
-                st.session_state.portfolio = pd.concat([st.session_state.portfolio, new_position], ignore_index=True)
-                save_portfolio_data(st.session_state.portfolio, st.session_state.transactions)
-                st.success(f"Successfully logged purchase of {buy_shares} shares of {buy_symbol} at ${buy_price:.2f}")
+                try:
+                    # Get current data and calculate signals
+                    bars = api.get_bars(
+                        buy_symbol,
+                        '1D',
+                        start=(buy_date - timedelta(days=30)).strftime('%Y-%m-%d'),
+                        end=buy_date.strftime('%Y-%m-%d'),
+                        adjustment='raw'
+                    ).df
+                    
+                    if not bars.empty:
+                        # Calculate indicators and score
+                        bars = calculate_technical_indicators(bars)
+                        bars = calculate_enhanced_indicators(bars)
+                        _, buy_score, buy_conditions = calculate_buy_score(bars)
+                        
+                        # Create unique ID for the transaction
+                        transaction_id = str(uuid.uuid4())
+                        
+                        # Add to portfolio
+                        new_position = pd.DataFrame({
+                            'ID': [transaction_id],
+                            'Symbol': [buy_symbol],
+                            'Shares': [buy_shares],
+                            'Buy Price': [buy_price],
+                            'Buy Date': [buy_date],
+                            'Total Cost': [buy_shares * buy_price],
+                            'Buy Score': [buy_score],
+                            'Buy Conditions': [json.dumps(buy_conditions)]
+                        })
+                        
+                        st.session_state.portfolio = pd.concat([st.session_state.portfolio, new_position], ignore_index=True)
+                        save_portfolio_data(st.session_state.portfolio, st.session_state.transactions)
+                        st.success(f"Successfully logged purchase of {buy_shares} shares of {buy_symbol} at ${buy_price:.2f}")
+                        st.info(f"Buy Signal Score: {buy_score}/20")
+                        st.info("Conditions Met:")
+                        for condition in buy_conditions:
+                            st.write(f"✅ {condition}")
+                    else:
+                        st.error(f"No data available for {buy_symbol} on {buy_date}")
+                except Exception as e:
+                    st.error(f"Error processing buy transaction: {str(e)}")
     
     with sell_tab:
         st.subheader("Log Sell Transaction")
@@ -835,44 +1155,80 @@ def portfolio_page():
                     submit_sell = st.form_submit_button("Log Sell")
                     
                     if submit_sell:
-                        # Calculate profit/loss
-                        profit = (sell_price - position['Buy Price']) * position['Shares']
-                        return_pct = ((sell_price - position['Buy Price']) / position['Buy Price']) * 100
-                        
-                        # Add to transactions history
-                        new_transaction = pd.DataFrame({
-                            'ID': [position['ID']],
-                            'Symbol': [position['Symbol']],
-                            'Shares': [position['Shares']],
-                            'Buy Price': [position['Buy Price']],
-                            'Sell Price': [sell_price],
-                            'Buy Date': [position['Buy Date']],
-                            'Sell Date': [sell_date],
-                            'Profit/Loss': [profit],
-                            'Return %': [return_pct]
-                        })
-                        
-                        st.session_state.transactions = pd.concat([st.session_state.transactions, new_transaction], ignore_index=True)
-                        
-                        # Update portfolio (remove sold position)
-                        st.session_state.portfolio = st.session_state.portfolio[st.session_state.portfolio['ID'] != position['ID']]
-                        
-                        # Update statistics
-                        st.session_state.total_profit += profit
-                        st.session_state.total_trades += 1
-                        if profit > 0:
-                            st.session_state.win_count += 1
-                        
-                        # Save updated data
-                        save_portfolio_data(st.session_state.portfolio, st.session_state.transactions)
-                        
-                        st.success(f"Successfully logged sale of {position['Shares']} shares of {position['Symbol']} for ${sell_price:.2f}")
-    
+                        try:
+                            # Get current data and calculate signals
+                            bars = api.get_bars(
+                                position['Symbol'],
+                                '1D',
+                                start=(sell_date - timedelta(days=30)).strftime('%Y-%m-%d'),
+                                end=sell_date.strftime('%Y-%m-%d'),
+                                adjustment='raw'
+                            ).df
+                            
+                            if not bars.empty:
+                                # Calculate indicators and score
+                                bars = calculate_technical_indicators(bars)
+                                bars = calculate_enhanced_indicators(bars)
+                                _, sell_score, sell_conditions = calculate_sell_score(bars)
+                                
+                                # Calculate profit/loss
+                                profit = (sell_price - position['Buy Price']) * position['Shares']
+                                return_pct = ((sell_price - position['Buy Price']) / position['Buy Price']) * 100
+                                
+                                # Get buy score and conditions from portfolio
+                                buy_score = st.session_state.portfolio.loc[st.session_state.portfolio['ID'] == position['ID'], 'Buy Score'].iloc[0]
+                                buy_conditions = json.loads(st.session_state.portfolio.loc[st.session_state.portfolio['ID'] == position['ID'], 'Buy Conditions'].iloc[0])
+                                
+                                # Add to transactions history
+                                new_transaction = pd.DataFrame({
+                                    'ID': [position['ID']],
+                                    'Symbol': [position['Symbol']],
+                                    'Shares': [position['Shares']],
+                                    'Buy Price': [position['Buy Price']],
+                                    'Sell Price': [sell_price],
+                                    'Buy Date': [position['Buy Date']],
+                                    'Sell Date': [sell_date],
+                                    'Profit/Loss': [profit],
+                                    'Return %': [return_pct],
+                                    'Buy Score': [buy_score],
+                                    'Sell Score': [sell_score],
+                                    'Buy Conditions': [json.dumps(buy_conditions)],
+                                    'Sell Conditions': [json.dumps(sell_conditions)]
+                                })
+                                
+                                st.session_state.transactions = pd.concat([st.session_state.transactions, new_transaction], ignore_index=True)
+                                
+                                # Update portfolio (remove sold position)
+                                st.session_state.portfolio = st.session_state.portfolio[st.session_state.portfolio['ID'] != position['ID']]
+                                
+                                # Update statistics
+                                st.session_state.total_profit += profit
+                                st.session_state.total_trades += 1
+                                if profit > 0:
+                                    st.session_state.win_count += 1
+                                
+                                # Save updated data
+                                save_portfolio_data(st.session_state.portfolio, st.session_state.transactions)
+                                
+                                st.success(f"Successfully logged sale of {position['Shares']} shares of {position['Symbol']} for ${sell_price:.2f}")
+                                st.info(f"Buy Signal Score: {buy_score}/20")
+                                st.info(f"Sell Signal Score: {sell_score}/17")
+                                st.info("Buy Conditions Met:")
+                                for condition in buy_conditions:
+                                    st.write(f"✅ {condition}")
+                                st.info("Sell Conditions Met:")
+                                for condition in sell_conditions:
+                                    st.write(f"✅ {condition}")
+                            else:
+                                st.error(f"No data available for {position['Symbol']} on {sell_date}")
+                        except Exception as e:
+                            st.error(f"Error processing sell transaction: {str(e)}")
+
     with portfolio_tab:
         st.subheader("Current Portfolio")
         
         # Display portfolio statistics
-        col1, col2, col3 = st.columns(3)
+        col1, col2, col3, col4 = st.columns(4)
         
         with col1:
             win_rate = (st.session_state.win_count / st.session_state.total_trades * 100) if st.session_state.total_trades > 0 else 0
@@ -883,10 +1239,109 @@ def portfolio_page():
         
         with col3:
             st.metric("Total Trades", st.session_state.total_trades)
+            
+        with col4:
+            # Calculate average return including both current portfolio and transaction history
+            total_investment = 0
+            total_current_value = 0
+            
+            # Add current portfolio positions
+            if not st.session_state.portfolio.empty:
+                total_investment += st.session_state.portfolio['Total Cost'].sum()
+                current_values = []
+                for _, position in st.session_state.portfolio.iterrows():
+                    try:
+                        # Add delay to avoid rate limiting
+                        time.sleep(0.2)  # 200ms delay between API calls
+                        
+                        # Get current price from Alpaca
+                        bars = api.get_bars(
+                            position['Symbol'],
+                            '1D',
+                            limit=1,
+                            adjustment='raw'
+                        ).df
+                        current_price = bars['close'].iloc[-1]
+                        current_value = current_price * position['Shares']
+                        current_values.append(current_value)
+                    except Exception as e:
+                        st.warning(f"Could not fetch current price for {position['Symbol']}: {str(e)}")
+                        continue
+                
+                if current_values:
+                    total_current_value += sum(current_values)
+            
+            # Add historical transactions
+            if not st.session_state.transactions.empty:
+                # Add investment amount from historical transactions
+                total_investment += st.session_state.transactions['Buy Price'].multiply(st.session_state.transactions['Shares']).sum()
+                # Add realized value from historical transactions
+                total_current_value += st.session_state.transactions['Sell Price'].multiply(st.session_state.transactions['Shares']).sum()
+            
+            # Calculate overall average return
+            if total_investment > 0:
+                avg_return = ((total_current_value - total_investment) / total_investment) * 100
+                st.metric("Average Return", f"{avg_return:.2f}%")
+            else:
+                st.metric("Average Return", "N/A")
         
         # Display current portfolio
         if not st.session_state.portfolio.empty:
-            st.dataframe(st.session_state.portfolio)
+            # Add current value and return columns to the display
+            display_portfolio = st.session_state.portfolio.copy()
+            current_values = []
+            returns = []
+            
+            for _, position in display_portfolio.iterrows():
+                try:
+                    # Add delay to avoid rate limiting
+                    time.sleep(0.2)  # 200ms delay between API calls
+                    
+                    # Get current price from Alpaca
+                    bars = api.get_bars(
+                        position['Symbol'],
+                        '1D',
+                        limit=1,
+                        adjustment='raw'
+                    ).df
+                    current_price = bars['close'].iloc[-1]
+                    current_value = current_price * position['Shares']
+                    position_return = ((current_price - position['Buy Price']) / position['Buy Price']) * 100
+                    
+                    current_values.append(current_value)
+                    returns.append(position_return)
+                except Exception as e:
+                    current_values.append(None)
+                    returns.append(None)
+            
+            display_portfolio['Current Value'] = current_values
+            display_portfolio['Return %'] = returns
+            
+            # Format the display
+            display_portfolio['Buy Price'] = display_portfolio['Buy Price'].map('${:.2f}'.format)
+            display_portfolio['Total Cost'] = display_portfolio['Total Cost'].map('${:.2f}'.format)
+            
+            # Only format Buy Score if the column exists
+            if 'Buy Score' in display_portfolio.columns:
+                display_portfolio['Buy Score'] = display_portfolio['Buy Score'].map(lambda x: f"{x}/20")
+            
+            # Display the portfolio
+            st.dataframe(display_portfolio)
+            
+            # Add signal analysis section
+            st.subheader("Signal Analysis")
+            
+            # Calculate average buy score if the column exists
+            if 'Buy Score' in display_portfolio.columns:
+                avg_buy_score = display_portfolio['Buy Score'].str.split('/').str[0].astype(float).mean()
+                st.metric("Average Buy Signal Score", f"{avg_buy_score:.1f}/20")
+                
+                # Display conditions met for each position
+                for _, position in display_portfolio.iterrows():
+                    with st.expander(f"{position['Symbol']} - Buy Conditions"):
+                        conditions = json.loads(position['Buy Conditions'])
+                        for condition in conditions:
+                            st.write(f"✅ {condition}")
         else:
             st.info("No positions in portfolio.")
     
@@ -894,7 +1349,49 @@ def portfolio_page():
         st.subheader("Transaction History")
         
         if not st.session_state.transactions.empty:
-            st.dataframe(st.session_state.transactions)
+            # Format the display
+            display_transactions = st.session_state.transactions.copy()
+            display_transactions['Buy Price'] = display_transactions['Buy Price'].map('${:.2f}'.format)
+            display_transactions['Sell Price'] = display_transactions['Sell Price'].map('${:.2f}'.format)
+            display_transactions['Profit/Loss'] = display_transactions['Profit/Loss'].map('${:.2f}'.format)
+            display_transactions['Return %'] = display_transactions['Return %'].map('{:.2f}%'.format)
+            
+            # Only format scores if the columns exist
+            if 'Buy Score' in display_transactions.columns:
+                display_transactions['Buy Score'] = display_transactions['Buy Score'].map(lambda x: f"{x}/20")
+            if 'Sell Score' in display_transactions.columns:
+                display_transactions['Sell Score'] = display_transactions['Sell Score'].map(lambda x: f"{x}/17")
+            
+            st.dataframe(display_transactions)
+            
+            # Add signal analysis section
+            st.subheader("Signal Analysis")
+            
+            # Calculate average scores if the columns exist
+            if 'Buy Score' in display_transactions.columns and 'Sell Score' in display_transactions.columns:
+                avg_buy_score = display_transactions['Buy Score'].str.split('/').str[0].astype(float).mean()
+                avg_sell_score = display_transactions['Sell Score'].str.split('/').str[0].astype(float).mean()
+                
+                col1, col2 = st.columns(2)
+                with col1:
+                    st.metric("Average Buy Signal Score", f"{avg_buy_score:.1f}/20")
+                with col2:
+                    st.metric("Average Sell Signal Score", f"{avg_sell_score:.1f}/17")
+                
+                # Display conditions for each transaction
+                for _, transaction in display_transactions.iterrows():
+                    with st.expander(f"{transaction['Symbol']} - Signal Details"):
+                        col1, col2 = st.columns(2)
+                        with col1:
+                            st.write("Buy Conditions:")
+                            buy_conditions = json.loads(transaction['Buy Conditions'])
+                            for condition in buy_conditions:
+                                st.write(f"✅ {condition}")
+                        with col2:
+                            st.write("Sell Conditions:")
+                            sell_conditions = json.loads(transaction['Sell Conditions'])
+                            for condition in sell_conditions:
+                                st.write(f"✅ {condition}")
             
             # Download button for transaction history
             csv = st.session_state.transactions.to_csv(index=False)
@@ -902,7 +1399,8 @@ def portfolio_page():
                 label="Download Transaction History",
                 data=csv,
                 file_name="transaction_history.csv",
-                mime="text/csv"
+                mime="text/csv",
+                key="download_transaction_history"
             )
         else:
             st.info("No completed transactions yet.")
