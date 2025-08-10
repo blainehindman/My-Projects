@@ -1,126 +1,192 @@
-# EOD Stock Analysis Platform
+# 📈 S&P 500 Advanced Trading Signal Analyzer
 
-A comprehensive stock analysis and portfolio management platform that combines technical analysis with portfolio tracking capabilities.
+A sophisticated trading analysis tool that scans the S&P 500 for high-probability short-term trading opportunities using multiple technical indicators and backtesting.
 
-## Features
+## 🎯 What It Does
 
-### 1. Stock Analysis
-- **Technical Analysis**: Advanced scoring system using multiple indicators
-- **Buy Signals**: 20-point scoring system with 11 different conditions
-- **Sell Signals**: 17-point scoring system with 10 different conditions
-- **Real-time Data**: Integration with Alpaca API and Yahoo Finance fallback
-- **S&P 500 Coverage**: Analyze all S&P 500 stocks simultaneously
+This analyzer combines multiple technical indicators to identify stocks with high-probability short-term trading opportunities. It uses a multi-factor approach to generate signals and validates them through historical backtesting.
 
-### 2. Portfolio Management
-- **Transaction Tracking**: Log buy and sell transactions with detailed metrics
-- **Performance Analytics**: Track win rate, total profit/loss, and average returns
-- **Signal Analysis**: Monitor buy/sell signal scores for each position
-- **Historical Analysis**: View complete transaction history with signal details
+### Key Features
 
-### 3. Technical Indicators
-- **Core Indicators**:
-  - RSI (Relative Strength Index)
-  - MACD (Moving Average Convergence Divergence)
-  - Bollinger Bands
-- **Enhanced Indicators**:
-  - EMA 9/21 Crossovers
-  - Stochastic RSI
-  - OBV (On Balance Volume)
-  - CCI (Commodity Channel Index)
-  - ATR (Average True Range)
-  - Volume Moving Averages
+- Analyzes all S&P 500 stocks
+- Uses multiple technical indicators
+- Performs historical backtesting
+- Generates probability scores
+- Provides comprehensive Excel output
+- Real-time signal monitoring
 
-## Setup
+## 📊 Technical Indicators Used
 
-1. **Environment Setup**
-   ```bash
-   # Create and activate virtual environment
-   python -m venv venv
-   source venv/bin/activate  # On Windows: venv\Scripts\activate
-   
-   # Install dependencies
-   pip install -r requirements.txt
-   ```
+1. **Momentum Indicators**
+   - RSI (Relative Strength Index)
+     - Primary oversold threshold: < 40
+     - Secondary threshold: < 45
+   - MACD (Moving Average Convergence Divergence)
+     - Strong momentum: > 0.05
+     - Neutral: > -0.02
+   - Stochastic Oscillator
+     - Used for oversold confirmation
 
-2. **API Configuration**
-   Create a `.env` file with your Alpaca API credentials:
-   ```
-   ALPACA_API_KEY=your_api_key
-   ALPACA_API_SECRET=your_api_secret
-   ALPACA_API_BASE_URL=your_api_base_url
-   ```
+2. **Trend Indicators**
+   - ADX (Average Directional Index)
+     - Strong trend: > 20
+     - Moderate trend: > 15
+   - EMA (Exponential Moving Average)
+     - 20-day and 50-day crossovers
+     - Price position relative to EMAs
 
-3. **Run the Application**
-   ```bash
-   streamlit run app.py
-   ```
+3. **Volatility Indicators**
+   - Bollinger Bands
+     - Price within 5% of lower band
+     - Band width analysis
+   - Volatility Ratio
+     - Acceptable range: 0.6 - 2.0
 
-## Usage
+4. **Volume Indicators**
+   - Volume Trend (5-day vs 20-day)
+     - Strong: > 20% above average
+     - Moderate: > 0% above average
+   - Volume Consistency
+     - High volume in majority of recent days
 
-### Search Page
-- Search individual stocks
-- View detailed price charts
-- Analyze technical indicators
-- Monitor real-time metrics
+## 💡 Signal Generation
 
-### Analyze Page
-- Scan entire S&P 500 for opportunities
-- View buy signals (score ≥ 13)
-- Monitor sell signals (score ≥ 11)
-- Download analysis results
+### Probability Score (100 points max)
 
-### Portfolio Page
-- Log buy and sell transactions
-- Track current positions
-- Monitor portfolio performance
-- View transaction history
-- Analyze signal effectiveness
+#### Price Action (30 points)
+- 15 points: Near Bollinger Band support
+- 15 points: Positive trend
+- 10 points: Slightly negative trend (> -2%)
 
-### Definitions Page
-- Detailed explanation of indicators
-- Signal criteria and thresholds
-- Technical analysis formulas
-- Interpretation guidelines
+#### Momentum (25 points)
+- 15 points: RSI < 40
+- 10 points: RSI < 45
+- 10 points: MACD > 0.05
+- 5 points: MACD > -0.02
 
-## Signal System
+#### Volume (25 points)
+- 15 points: Volume > 20% above average with consistency
+- 10 points: Volume > base level
+- 10 points: Volume trend > 5%
+- 5 points: Volume trend > 0%
 
-### Buy Signals (20-point scale)
-1. RSI < 30 (3 points)
-2. MACD Bullish Crossover (3 points)
-3. Price below BB (2 points)
-4. EMA 9/21 Bullish Crossover (2 points)
-5. High Volume (2 points)
-6. Stochastic RSI < 20 & Rising (1 point)
-7. OBV Upward Trend (1 point)
-8. CCI < -100 (1 point)
-9. ATR Increasing (1 point)
-10. Bullish Candlestick (2 points)
-11. Additional Volume Analysis (2 points)
+#### Technical Strength (20 points)
+- 10 points: ADX > 20
+- 5 points: ADX > 15
+- 10 points: EMA alignment
+- 5 points: Price > EMA50
 
-### Sell Signals (17-point scale)
-1. RSI > 70 (3 points)
-2. MACD Bearish Crossover (3 points)
-3. Price above BB (2 points)
-4. EMA 9/21 Bearish Crossover (2 points)
-5. Volume Spike on Down Candle (2 points)
-6. Stochastic RSI > 80 & Falling (1 point)
-7. OBV Falling (1 point)
-8. CCI > 100 (1 point)
-9. Bearish Candlestick (2 points)
+### Signal Requirements
 
-## Data Storage
-- Portfolio data stored in `data/portfolio.json`
-- Transaction history stored in `data/transactions.json`
-- Automatic data persistence between sessions
+A stock must meet ONE of these setups AND score ≥ 65 points:
 
-## Dependencies
-- streamlit
-- pandas
-- yfinance
-- plotly
-- alpaca-trade-api
-- ta (Technical Analysis library)
-- python-dotenv
+1. **Oversold Reversal Setup**
+   - RSI < 40 AND
+   - (MACD > 0.05 OR Price near BB support)
 
-## Contributing
-Feel free to submit issues and enhancement requests! 
+2. **Strong Trend Setup**
+   - ADX > 20 AND
+   - (Volume 20% above average OR Healthy volatility)
+
+3. **Support Bounce Setup**
+   - Price near BB support AND
+   - Volume 20% above average
+
+4. **Technical Confluence Setup**
+   - MACD > 0.05 AND
+   - ADX > 20 AND
+   - Healthy volatility
+
+## 📈 Backtesting Criteria
+
+Each signal must pass historical validation:
+- Win rate > 55%
+- Average return > 1.5%
+- Sharpe ratio > 1.0
+- Minimum 3 historical signals
+- Measures 5-day forward returns
+
+## 📑 Output Files
+
+The analyzer generates 'trading_analysis.xlsx' with three sheets:
+
+1. **All Analysis**
+   - Complete analysis of all S&P 500 stocks
+   - All technical indicators and metrics
+   - Raw probability scores
+
+2. **Active Signals**
+   - Stocks currently meeting signal criteria
+   - Current technical indicator values
+   - Probability scores and metrics
+
+3. **Strong Signals**
+   - Highest probability opportunities
+   - Signals with backtest confirmation
+   - Complete metrics and analysis
+
+## 🔍 Key Metrics in Output
+
+- Ticker symbol
+- Current price
+- Signal probability score
+- RSI value
+- MACD differential
+- ADX trend strength
+- Volume trend
+- Win rate (from backtesting)
+- Average 5-day return
+- Signal status
+- Backtest confirmation
+
+## 🚀 How to Run
+
+1. Set up your Alpaca API credentials in .env:
+```
+ALPACA_API_KEY=your_key
+ALPACA_API_SECRET=your_secret
+ALPACA_API_BASE_URL=https://paper-api.alpaca.markets
+```
+
+2. Install dependencies:
+```bash
+pip install -r requirements.txt
+```
+
+3. Run the analyzer:
+```bash
+python app.py
+```
+
+## 📋 Requirements
+
+- Python 3.7+
+- Alpaca API account (free tier works)
+- Required Python packages (in requirements.txt)
+- Internet connection for market data
+
+## ⚠️ Important Notes
+
+- Best run after market hours for complete daily data
+- Uses Alpaca's basic (free) market data
+- Past performance doesn't guarantee future results
+- Always do your own due diligence
+- Consider using paper trading first
+
+## 🔄 Signal Updates
+
+The analyzer provides real-time updates during scanning:
+- Progress indicators
+- Strong signal alerts
+- Key metrics for each signal
+- Summary statistics
+
+## 📊 Understanding Results
+
+- **Signal Probability**: Higher is better (max 100)
+- **Win Rate**: Historical success rate (> 55% required)
+- **Average Return**: Expected 5-day return based on history
+- **Signal Active**: Current signal status
+- **Backtest Support**: Historical validation
+
+Always review the complete metrics in the Excel output and conduct your own additional analysis before making trading decisions.
