@@ -3,7 +3,8 @@ import { useAuth } from '../contexts/AuthContext'
 import { useParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import TaskTable from '../components/TaskTable'
-import TaskSlideout from '../components/TaskSlideout'
+import TaskBoard from '../components/TaskBoard'
+import TaskModal from '../components/TaskModal'
 
 const ProjectTasks = () => {
   const { activeWorkspace, activeProject, user } = useAuth()
@@ -13,9 +14,11 @@ const ProjectTasks = () => {
   const [tasks, setTasks] = useState([])
   const [projectUsers, setProjectUsers] = useState([])
   const [loading, setLoading] = useState(true)
-  const [isSlideoutOpen, setIsSlideoutOpen] = useState(false)
+  const [isTaskModalOpen, setIsTaskModalOpen] = useState(false)
   const [editingTask, setEditingTask] = useState(null)
+  const [preSelectedSectionId, setPreSelectedSectionId] = useState(null)
   const [error, setError] = useState('')
+  const [viewMode, setViewMode] = useState('board') // 'board' or 'table'
 
   // Check access
   if (!activeWorkspace || activeWorkspace.id !== workspaceId || !activeProject || activeProject.id !== projectId) {
@@ -121,15 +124,29 @@ const ProjectTasks = () => {
     }
   }, [activeProject])
 
+  // Listen for new task modal events from TaskBoard
+  useEffect(() => {
+    const handleNewTaskEvent = (event) => {
+      const sectionId = event.detail?.sectionId
+      handleNewTask(sectionId)
+    }
+
+    document.addEventListener('openNewTaskModal', handleNewTaskEvent)
+    return () => {
+      document.removeEventListener('openNewTaskModal', handleNewTaskEvent)
+    }
+  }, [])
+
   // Handle task creation/editing
-  const handleNewTask = () => {
+  const handleNewTask = (sectionId = null) => {
     setEditingTask(null)
-    setIsSlideoutOpen(true)
+    setPreSelectedSectionId(sectionId)
+    setIsTaskModalOpen(true)
   }
 
   const handleEditTask = (task) => {
     setEditingTask(task)
-    setIsSlideoutOpen(true)
+    setIsTaskModalOpen(true)
   }
 
   const handleDeleteTask = async (task) => {
@@ -167,9 +184,10 @@ const ProjectTasks = () => {
     }
   }
 
-  const handleCloseSlideout = () => {
-    setIsSlideoutOpen(false)
+  const handleCloseModal = () => {
+    setIsTaskModalOpen(false)
     setEditingTask(null)
+    setPreSelectedSectionId(null)
   }
 
   return (
@@ -183,15 +201,63 @@ const ProjectTasks = () => {
               Manage and track tasks for this project
             </p>
           </div>
-          <button 
-            className="btn-filled focus-visible"
-            onClick={handleNewTask}
-          >
-            <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-            </svg>
-            New Task
-          </button>
+          <div className="flex items-center space-x-3">
+            {/* View Toggle */}
+            <div className="flex bg-gray-100 rounded-lg p-1">
+              <button
+                onClick={() => setViewMode('board')}
+                className={`px-3 py-1 rounded text-sm font-medium transition-colors ${
+                  viewMode === 'board'
+                    ? 'bg-white text-primary shadow-sm'
+                    : 'text-tertiary hover:text-secondary'
+                }`}
+              >
+                <svg className="w-4 h-4 mr-1 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2h2z" />
+                </svg>
+                Board
+              </button>
+              <button
+                onClick={() => setViewMode('table')}
+                className={`px-3 py-1 rounded text-sm font-medium transition-colors ${
+                  viewMode === 'table'
+                    ? 'bg-white text-primary shadow-sm'
+                    : 'text-tertiary hover:text-secondary'
+                }`}
+              >
+                <svg className="w-4 h-4 mr-1 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                </svg>
+                Table
+              </button>
+            </div>
+            
+            <div className="flex space-x-2">
+              <button 
+                className="btn-tinted focus-visible"
+                onClick={() => {
+                  // Find the task board component and trigger its config modal
+                  const configEvent = new CustomEvent('openTaskConfig')
+                  document.dispatchEvent(configEvent)
+                }}
+                title="Configure Task Settings"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+              </button>
+              <button 
+                className="btn-filled focus-visible"
+                onClick={handleNewTask}
+              >
+                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                </svg>
+                New Task
+              </button>
+            </div>
+          </div>
         </div>
 
         {/* Error Message */}
@@ -208,21 +274,35 @@ const ProjectTasks = () => {
           </div>
         )}
 
-        {/* Tasks Table */}
-        <TaskTable
-          tasks={tasks}
-          onEditTask={handleEditTask}
-          onDeleteTask={handleDeleteTask}
-          loading={loading}
-        />
+        {/* Tasks View */}
+        {viewMode === 'board' ? (
+          <TaskBoard
+            projectId={activeProject.id}
+            onTaskCreated={handleTaskSaved}
+            onTaskUpdated={handleTaskSaved}
+            onTaskDeleted={(taskId) => {
+              setTasks(prev => prev.filter(t => t.id !== taskId))
+            }}
+          />
+        ) : (
+          <TaskTable
+            tasks={tasks}
+            onEditTask={handleEditTask}
+            onDeleteTask={handleDeleteTask}
+            loading={loading}
+            onTaskUpdated={handleTaskSaved}
+          />
+        )}
 
-        {/* Task Slideout */}
-        <TaskSlideout
-          isOpen={isSlideoutOpen}
-          onClose={handleCloseSlideout}
+        {/* Task Modal */}
+        <TaskModal
+          isOpen={isTaskModalOpen}
+          onClose={handleCloseModal}
+          projectId={activeProject.id}
           task={editingTask}
-          onTaskSaved={handleTaskSaved}
-          projectUsers={projectUsers}
+          preSelectedSectionId={preSelectedSectionId}
+          onTaskCreated={handleTaskSaved}
+          onTaskUpdated={handleTaskSaved}
         />
       </div>
     </div>

@@ -855,11 +855,25 @@
   box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
 }
 
+.line-clamp-1 {
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 1;
+}
+
 .line-clamp-2 {
   overflow: hidden;
   display: -webkit-box;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
+}
+
+.line-clamp-3 {
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
 }
 
 .slide-up {
@@ -890,6 +904,82 @@
     opacity: 1; 
     transform: translateX(0); 
   }
+}
+
+.slide-in-up {
+  animation: slideInUp 0.3s ease-out;
+}
+
+@keyframes slideInUp {
+  from { 
+    opacity: 0; 
+    transform: translateY(20px) scale(0.98); 
+  }
+  to { 
+    opacity: 1; 
+    transform: translateY(0) scale(1); 
+  }
+}
+
+/* =============================================================================
+   TASK BOARD STYLES
+   ============================================================================= */
+
+/* Drag and drop styles */
+.dragging {
+  opacity: 0.5;
+  transform: rotate(2deg);
+  transition: all 0.2s ease;
+}
+
+.drag-over {
+  background-color: rgba(0, 122, 255, 0.05);
+  border: 2px dashed var(--color-system-blue);
+  transition: all 0.2s ease;
+}
+
+/* Task card styles */
+.task-card {
+  transition: all 0.2s ease;
+  cursor: grab;
+}
+
+.task-card:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+
+.task-card:active {
+  cursor: grabbing;
+  transform: translateY(0px) scale(0.98);
+}
+
+/* Group hover for task cards */
+.group:hover .group-hover\:opacity-100 {
+  opacity: 1;
+}
+
+/* Board scrolling */
+.task-board-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-gray-400) transparent;
+}
+
+.task-board-scroll::-webkit-scrollbar {
+  height: 8px;
+}
+
+.task-board-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.task-board-scroll::-webkit-scrollbar-thumb {
+  background-color: var(--color-gray-400);
+  border-radius: var(--radius-pill);
+}
+
+.task-board-scroll::-webkit-scrollbar-thumb:hover {
+  background-color: var(--color-gray-500);
 }
 
 /* Respect reduced motion */

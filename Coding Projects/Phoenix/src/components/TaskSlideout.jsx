@@ -4,6 +4,7 @@ import { useAuth } from '../contexts/AuthContext'
 
 const TaskSlideout = ({ isOpen, onClose, task = null, onTaskSaved, projectUsers = [] }) => {
   const { user, activeWorkspace, activeProject } = useAuth()
+  const [sections, setSections] = useState([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   
@@ -12,7 +13,8 @@ const TaskSlideout = ({ isOpen, onClose, task = null, onTaskSaved, projectUsers 
     summary: '',
     description: '',
     assignee: '',
-    due_date: ''
+    due_date: '',
+    section_id: ''
   })
 
   const isEditing = !!task
@@ -26,7 +28,8 @@ const TaskSlideout = ({ isOpen, onClose, task = null, onTaskSaved, projectUsers 
           summary: task.summary || '',
           description: task.description || '',
           assignee: task.assignee || '',
-          due_date: task.due_date || ''
+          due_date: task.due_date || '',
+          section_id: task.section_id || ''
         })
       } else {
         // Creating new task
@@ -34,12 +37,40 @@ const TaskSlideout = ({ isOpen, onClose, task = null, onTaskSaved, projectUsers 
           summary: '',
           description: '',
           assignee: '',
-          due_date: ''
+          due_date: '',
+          section_id: ''
         })
       }
       setError('')
     }
   }, [isOpen, task])
+
+  // Fetch sections for the project
+  useEffect(() => {
+    if (isOpen && activeProject) {
+      fetchSections()
+    }
+  }, [isOpen, activeProject])
+
+  const fetchSections = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('task_sections')
+        .select('*')
+        .eq('project_id', activeProject.id)
+        .order('sort_order', { ascending: true })
+
+      if (error) throw error
+      setSections(data || [])
+      
+      // Set default section if creating new task
+      if (!task && data && data.length > 0) {
+        setFormData(prev => ({ ...prev, section_id: data[0].id }))
+      }
+    } catch (err) {
+      console.error('Error fetching sections:', err)
+    }
+  }
 
   // Handle form changes
   const handleChange = (field, value) => {
@@ -69,10 +100,14 @@ const TaskSlideout = ({ isOpen, onClose, task = null, onTaskSaved, projectUsers 
         description: formData.description.trim() || null,
         assignee: formData.assignee || null,
         due_date: formData.due_date || null,
+        section_id: formData.section_id || null,
         organization_id: activeWorkspace.organization_id,
         workspace_id: activeWorkspace.id,
         project_id: activeProject.id,
-        created_by: user.id
+        created_by: user.id,
+        status: 'todo',
+        priority: 'medium',
+        sort_order: 0
       }
 
       let result
@@ -126,7 +161,8 @@ const TaskSlideout = ({ isOpen, onClose, task = null, onTaskSaved, projectUsers 
       summary: '',
       description: '',
       assignee: '',
-      due_date: ''
+      due_date: '',
+      section_id: ''
     })
     setError('')
     setLoading(false)
@@ -269,6 +305,27 @@ const TaskSlideout = ({ isOpen, onClose, task = null, onTaskSaved, projectUsers 
                   {projectUsers.map(user => (
                     <option key={user.user_id} value={user.user_id}>
                       {user.email}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Section */}
+              <div className="form-group">
+                <label htmlFor="taskSection" className="input-label">
+                  Section
+                </label>
+                <select
+                  id="taskSection"
+                  value={formData.section_id}
+                  onChange={(e) => handleChange('section_id', e.target.value)}
+                  className="input-field"
+                  disabled={loading}
+                >
+                  <option value="">Select a section</option>
+                  {sections.map(section => (
+                    <option key={section.id} value={section.id}>
+                      {section.name}
                     </option>
                   ))}
                 </select>

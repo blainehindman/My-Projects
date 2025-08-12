@@ -1,7 +1,7 @@
 import React from 'react'
 import DropdownMenu, { DropdownItem } from './DropdownMenu'
 
-const TaskTable = ({ tasks = [], onEditTask, onDeleteTask, loading = false }) => {
+const TaskTable = ({ tasks = [], onEditTask, onDeleteTask, onTaskUpdated, loading = false }) => {
 
   // Format date display
   const formatDate = (dateString) => {
