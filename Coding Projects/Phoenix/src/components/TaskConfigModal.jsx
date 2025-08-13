@@ -8,8 +8,12 @@ const TaskConfigModal = ({ isOpen, onClose, projectId, onConfigUpdated }) => {
   const [error, setError] = useState('')
   const [config, setConfig] = useState({
     statuses: [],
-    priorities: []
+    priorities: [],
+    estimations: [],
+    healths: [],
+    sections: []
   })
+  const [sections, setSections] = useState([])
 
   // Load current configuration
   useEffect(() => {
@@ -21,14 +25,28 @@ const TaskConfigModal = ({ isOpen, onClose, projectId, onConfigUpdated }) => {
   const loadConfig = async () => {
     try {
       setLoading(true)
-      const { data, error } = await supabase
+      
+      // Load JSON config
+      const { data: configData, error: configError } = await supabase
         .rpc('get_project_task_config', { p_project_id: projectId })
 
-      if (error) throw error
-      setConfig(data || getDefaultConfig())
+      if (configError) throw configError
+      
+      // Load sections from task_sections table
+      const { data: sectionsData, error: sectionsError } = await supabase
+        .from('task_sections')
+        .select('*')
+        .eq('project_id', projectId)
+        .order('sort_order')
+
+      if (sectionsError) throw sectionsError
+
+      setConfig(configData || getDefaultConfig())
+      setSections(sectionsData || [])
     } catch (err) {
       console.error('Error loading task config:', err)
       setConfig(getDefaultConfig())
+      setSections([])
     } finally {
       setLoading(false)
     }
@@ -44,6 +62,19 @@ const TaskConfigModal = ({ isOpen, onClose, projectId, onConfigUpdated }) => {
       { id: 'low', name: 'Low', color: '#8E8E93', order: 0 },
       { id: 'medium', name: 'Medium', color: '#FF9500', order: 1 },
       { id: 'high', name: 'High', color: '#FF3B30', order: 2 }
+    ],
+    estimations: [
+      { id: 'xs', name: 'XS (1-2h)', color: '#34C759', order: 0 },
+      { id: 'small', name: 'Small (3-5h)', color: '#8E8E93', order: 1 },
+      { id: 'medium', name: 'Medium (1d)', color: '#FF9500', order: 2 },
+      { id: 'large', name: 'Large (2-3d)', color: '#FF3B30', order: 3 },
+      { id: 'xl', name: 'XL (1w+)', color: '#AF52DE', order: 4 }
+    ],
+    healths: [
+      { id: 'excellent', name: 'Excellent', color: '#34C759', order: 0 },
+      { id: 'good', name: 'Good', color: '#8E8E93', order: 1 },
+      { id: 'at_risk', name: 'At Risk', color: '#FF9500', order: 2 },
+      { id: 'blocked', name: 'Blocked', color: '#FF3B30', order: 3 }
     ]
   })
 
@@ -71,6 +102,32 @@ const TaskConfigModal = ({ isOpen, onClose, projectId, onConfigUpdated }) => {
     setConfig(prev => ({
       ...prev,
       priorities: [...prev.priorities, newPriority]
+    }))
+  }
+
+  const handleAddEstimation = () => {
+    const newEstimation = {
+      id: `estimation_${Date.now()}`,
+      name: 'New Estimation',
+      color: '#007AFF',
+      order: config.estimations.length
+    }
+    setConfig(prev => ({
+      ...prev,
+      estimations: [...prev.estimations, newEstimation]
+    }))
+  }
+
+  const handleAddHealth = () => {
+    const newHealth = {
+      id: `health_${Date.now()}`,
+      name: 'New Health',
+      color: '#007AFF',
+      order: config.healths.length
+    }
+    setConfig(prev => ({
+      ...prev,
+      healths: [...prev.healths, newHealth]
     }))
   }
 
@@ -114,19 +171,92 @@ const TaskConfigModal = ({ isOpen, onClose, projectId, onConfigUpdated }) => {
     }))
   }
 
+  const handleUpdateEstimation = (index, field, value) => {
+    setConfig(prev => ({
+      ...prev,
+      estimations: prev.estimations.map((estimation, i) => 
+        i === index ? { ...estimation, [field]: value } : estimation
+      )
+    }))
+  }
+
+  const handleDeleteEstimation = (index) => {
+    if (config.estimations.length <= 1) {
+      alert('You must have at least one estimation')
+      return
+    }
+    setConfig(prev => ({
+      ...prev,
+      estimations: prev.estimations.filter((_, i) => i !== index)
+    }))
+  }
+
+  const handleUpdateHealth = (index, field, value) => {
+    setConfig(prev => ({
+      ...prev,
+      healths: prev.healths.map((health, i) => 
+        i === index ? { ...health, [field]: value } : health
+      )
+    }))
+  }
+
+  const handleDeleteHealth = (index) => {
+    if (config.healths.length <= 1) {
+      alert('You must have at least one health status')
+      return
+    }
+    setConfig(prev => ({
+      ...prev,
+      healths: prev.healths.filter((_, i) => i !== index)
+    }))
+  }
+
+  // Section management handlers
+  const handleAddSection = () => {
+    const newSection = {
+      id: null, // Will be set by database
+      name: 'New Section',
+      color: '#007AFF',
+      sort_order: sections.length,
+      project_id: projectId,
+      created_by: user.id
+    }
+    setSections(prev => [...prev, newSection])
+  }
+
+  const handleUpdateSection = (index, field, value) => {
+    setSections(prev => 
+      prev.map((section, i) => 
+        i === index ? { ...section, [field]: value } : section
+      )
+    )
+  }
+
+  const handleDeleteSection = (index) => {
+    if (sections.length <= 1) {
+      alert('You must have at least one section')
+      return
+    }
+    setSections(prev => prev.filter((_, i) => i !== index))
+  }
+
   // Save configuration
   const handleSave = async () => {
     try {
       setLoading(true)
       setError('')
 
-      const { data, error } = await supabase
+      // Save JSON config (statuses and priorities)
+      const { error: configError } = await supabase
         .rpc('update_project_task_config', { 
           p_project_id: projectId, 
           p_config: config 
         })
 
-      if (error) throw error
+      if (configError) throw configError
+
+      // Save sections to task_sections table
+      await saveSections()
 
       if (onConfigUpdated) {
         onConfigUpdated(config)
@@ -138,6 +268,73 @@ const TaskConfigModal = ({ isOpen, onClose, projectId, onConfigUpdated }) => {
       setError('Failed to save configuration')
     } finally {
       setLoading(false)
+    }
+  }
+
+  // Helper function to save sections
+  const saveSections = async () => {
+    // Get existing sections from database
+    const { data: existingSections, error: fetchError } = await supabase
+      .from('task_sections')
+      .select('id')
+      .eq('project_id', projectId)
+
+    if (fetchError) throw fetchError
+
+    const existingIds = existingSections.map(s => s.id)
+    const sectionsToUpdate = sections.filter(s => s.id && existingIds.includes(s.id))
+    const sectionsToCreate = sections.filter(s => !s.id || !existingIds.includes(s.id))
+    const sectionsToDelete = existingIds.filter(id => !sections.find(s => s.id === id))
+
+    // Delete removed sections
+    if (sectionsToDelete.length > 0) {
+      // First move tasks from deleted sections to the first remaining section that exists
+      const firstExistingSection = sections.find(s => s.id && existingIds.includes(s.id))
+      if (firstExistingSection) {
+        for (const sectionId of sectionsToDelete) {
+          await supabase
+            .from('tasks')
+            .update({ section_id: firstExistingSection.id })
+            .eq('section_id', sectionId)
+        }
+      }
+
+      // Then delete the sections
+      const { error: deleteError } = await supabase
+        .from('task_sections')
+        .delete()
+        .in('id', sectionsToDelete)
+
+      if (deleteError) throw deleteError
+    }
+
+    // Update existing sections
+    for (const section of sectionsToUpdate) {
+      const { error: updateError } = await supabase
+        .from('task_sections')
+        .update({
+          name: section.name,
+          color: section.color,
+          sort_order: section.sort_order
+        })
+        .eq('id', section.id)
+
+      if (updateError) throw updateError
+    }
+
+    // Create new sections
+    for (const section of sectionsToCreate) {
+      const { error: createError } = await supabase
+        .from('task_sections')
+        .insert({
+          project_id: projectId,
+          name: section.name,
+          color: section.color,
+          sort_order: section.sort_order,
+          created_by: user.id
+        })
+
+      if (createError) throw createError
     }
   }
 
@@ -353,6 +550,219 @@ const TaskConfigModal = ({ isOpen, onClose, projectId, onConfigUpdated }) => {
                             className="btn-plain btn-compact text-red-600 hover:bg-red-50 focus-visible"
                             disabled={config.priorities.length <= 1}
                             title="Delete priority"
+                          >
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Estimations Section */}
+              <div>
+                <div className="flex items-center justify-between mb-6">
+                  <h3 className="text-title-3 text-primary">Task Estimations</h3>
+                  <button
+                    onClick={handleAddEstimation}
+                    className="btn-tinted btn-compact focus-visible"
+                  >
+                    <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                    </svg>
+                    Add Estimation
+                  </button>
+                </div>
+                
+                <div className="space-y-4">
+                  {config.estimations.map((estimation, index) => (
+                    <div key={`${estimation.id}-${index}`} className="bg-gray-50 rounded-lg p-4">
+                      <div className="grid grid-cols-12 gap-4 items-center">
+                        {/* Color Picker */}
+                        <div className="col-span-1">
+                          <input
+                            type="color"
+                            value={estimation.color}
+                            onChange={(e) => handleUpdateEstimation(index, 'color', e.target.value)}
+                            className="w-10 h-10 rounded-lg border-2 border-gray-300 cursor-pointer"
+                            title="Choose color"
+                          />
+                        </div>
+                        
+                        {/* Name Input */}
+                        <div className="col-span-5">
+                          <label className="block text-caption-1 text-tertiary mb-1">Name</label>
+                          <input
+                            type="text"
+                            value={estimation.name}
+                            onChange={(e) => handleUpdateEstimation(index, 'name', e.target.value)}
+                            className="input-field w-full"
+                            placeholder="Estimation name"
+                          />
+                        </div>
+                        
+                        {/* ID Input */}
+                        <div className="col-span-5">
+                          <label className="block text-caption-1 text-tertiary mb-1">ID (no spaces)</label>
+                          <input
+                            type="text"
+                            value={estimation.id}
+                            onChange={(e) => {
+                              const cleanId = e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, '')
+                              handleUpdateEstimation(index, 'id', cleanId)
+                            }}
+                            className="input-field w-full"
+                            placeholder="estimation_id"
+                          />
+                        </div>
+                        
+                        {/* Delete Button */}
+                        <div className="col-span-1">
+                          <button
+                            onClick={() => handleDeleteEstimation(index)}
+                            className="btn-plain btn-compact text-red-600 hover:bg-red-50 focus-visible"
+                            disabled={config.estimations.length <= 1}
+                            title="Delete estimation"
+                          >
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Health Section */}
+              <div>
+                <div className="flex items-center justify-between mb-6">
+                  <h3 className="text-title-3 text-primary">Task Health</h3>
+                  <button
+                    onClick={handleAddHealth}
+                    className="btn-tinted btn-compact focus-visible"
+                  >
+                    <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                    </svg>
+                    Add Health Status
+                  </button>
+                </div>
+                
+                <div className="space-y-4">
+                  {config.healths.map((health, index) => (
+                    <div key={`${health.id}-${index}`} className="bg-gray-50 rounded-lg p-4">
+                      <div className="grid grid-cols-12 gap-4 items-center">
+                        {/* Color Picker */}
+                        <div className="col-span-1">
+                          <input
+                            type="color"
+                            value={health.color}
+                            onChange={(e) => handleUpdateHealth(index, 'color', e.target.value)}
+                            className="w-10 h-10 rounded-lg border-2 border-gray-300 cursor-pointer"
+                            title="Choose color"
+                          />
+                        </div>
+                        
+                        {/* Name Input */}
+                        <div className="col-span-5">
+                          <label className="block text-caption-1 text-tertiary mb-1">Name</label>
+                          <input
+                            type="text"
+                            value={health.name}
+                            onChange={(e) => handleUpdateHealth(index, 'name', e.target.value)}
+                            className="input-field w-full"
+                            placeholder="Health status name"
+                          />
+                        </div>
+                        
+                        {/* ID Input */}
+                        <div className="col-span-5">
+                          <label className="block text-caption-1 text-tertiary mb-1">ID (no spaces)</label>
+                          <input
+                            type="text"
+                            value={health.id}
+                            onChange={(e) => {
+                              const cleanId = e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, '')
+                              handleUpdateHealth(index, 'id', cleanId)
+                            }}
+                            className="input-field w-full"
+                            placeholder="health_id"
+                          />
+                        </div>
+                        
+                        {/* Delete Button */}
+                        <div className="col-span-1">
+                          <button
+                            onClick={() => handleDeleteHealth(index)}
+                            className="btn-plain btn-compact text-red-600 hover:bg-red-50 focus-visible"
+                            disabled={config.healths.length <= 1}
+                            title="Delete health status"
+                          >
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Sections Section */}
+              <div>
+                <div className="flex items-center justify-between mb-6">
+                  <h3 className="text-title-3 text-primary">Task Sections</h3>
+                  <button
+                    onClick={handleAddSection}
+                    className="btn-tinted btn-compact focus-visible"
+                  >
+                    <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                    </svg>
+                    Add Section
+                  </button>
+                </div>
+                
+                <div className="space-y-4">
+                  {sections.map((section, index) => (
+                    <div key={`section-${section.id || index}`} className="bg-gray-50 rounded-lg p-4">
+                      <div className="grid grid-cols-12 gap-4 items-center">
+                        {/* Color Picker */}
+                        <div className="col-span-1">
+                          <input
+                            type="color"
+                            value={section.color || '#007AFF'}
+                            onChange={(e) => handleUpdateSection(index, 'color', e.target.value)}
+                            className="w-10 h-10 rounded-lg border-2 border-gray-300 cursor-pointer"
+                            title="Choose color"
+                          />
+                        </div>
+                        
+                        {/* Name Input */}
+                        <div className="col-span-10">
+                          <label className="block text-caption-1 text-tertiary mb-1">Section Name</label>
+                          <input
+                            type="text"
+                            value={section.name}
+                            onChange={(e) => handleUpdateSection(index, 'name', e.target.value)}
+                            className="input-field w-full"
+                            placeholder="Section name"
+                          />
+                        </div>
+                        
+                        {/* Delete Button */}
+                        <div className="col-span-1">
+                          <button
+                            onClick={() => handleDeleteSection(index)}
+                            className="btn-plain btn-compact text-red-600 hover:bg-red-50 focus-visible"
+                            disabled={sections.length <= 1}
+                            title="Delete section"
                           >
                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />

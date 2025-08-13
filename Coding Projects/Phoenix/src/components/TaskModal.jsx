@@ -10,12 +10,14 @@ const TaskModal = ({ isOpen, onClose, projectId, task = null, preSelectedSection
   const [taskConfig, setTaskConfig] = useState(null)
   
   const [formData, setFormData] = useState({
-    title: '',
+    summary: '',
     description: '',
-    assignee_id: '',
+    assignee: '',
     due_date: '',
     status: '',
     priority: '',
+    estimation: '',
+    health: '',
     section_id: ''
   })
 
@@ -34,24 +36,28 @@ const TaskModal = ({ isOpen, onClose, projectId, task = null, preSelectedSection
       if (task) {
         // Editing existing task
         setFormData({
-          title: task.title || '',
+          summary: task.summary || '',
           description: task.description || '',
-          assignee_id: task.assignee_id || '',
+          assignee: task.assignee || '',
           due_date: task.due_date ? task.due_date.split('T')[0] : '',
           status: task.status || 'todo',
           priority: task.priority || 'medium',
+          estimation: task.estimation || 'medium',
+          health: task.health || 'good',
           section_id: task.section_id || ''
         })
       } else {
         // Creating new task
         const defaultSectionId = preSelectedSectionId || (sections.length > 0 ? sections[0].id : '')
         setFormData({
-          title: '',
+          summary: '',
           description: '',
-          assignee_id: user?.id || '',
+          assignee: user?.id || '',
           due_date: '',
           status: 'todo',
           priority: 'medium',
+          estimation: 'medium',
+          health: 'good',
           section_id: defaultSectionId
         })
       }
@@ -115,7 +121,7 @@ const TaskModal = ({ isOpen, onClose, projectId, task = null, preSelectedSection
   const handleSubmit = async (e) => {
     e.preventDefault()
     
-    if (!formData.title.trim()) {
+    if (!formData.summary.trim()) {
       setError('Task title is required')
       return
     }
@@ -125,16 +131,19 @@ const TaskModal = ({ isOpen, onClose, projectId, task = null, preSelectedSection
       setError('')
 
       const taskData = {
-        title: formData.title.trim(),
+        summary: formData.summary.trim(),
         description: formData.description.trim(),
-        assignee_id: formData.assignee_id || null,
+        assignee: formData.assignee || null,
         due_date: formData.due_date || null,
         status: formData.status,
         priority: formData.priority,
+        estimation: formData.estimation,
+        health: formData.health,
         section_id: formData.section_id || null,
         project_id: projectId,
         organization_id: activeProject?.organization_id,
         workspace_id: activeWorkspace?.id,
+        created_by: user?.id,
         sort_order: 0
       }
 
@@ -176,12 +185,14 @@ const TaskModal = ({ isOpen, onClose, projectId, task = null, preSelectedSection
 
   const handleClose = () => {
     setFormData({
-      title: '',
+      summary: '',
       description: '',
-      assignee_id: '',
+      assignee: '',
       due_date: '',
       status: 'todo',
       priority: 'medium',
+      estimation: 'medium',
+      health: 'good',
       section_id: ''
     })
     setError('')
@@ -265,8 +276,8 @@ const TaskModal = ({ isOpen, onClose, projectId, task = null, preSelectedSection
                 </label>
                 <input
                   type="text"
-                  value={formData.title}
-                  onChange={(e) => handleInputChange('title', e.target.value)}
+                  value={formData.summary}
+                  onChange={(e) => handleInputChange('summary', e.target.value)}
                   className="input-field w-full"
                   placeholder="Enter task title"
                   required
@@ -282,7 +293,7 @@ const TaskModal = ({ isOpen, onClose, projectId, task = null, preSelectedSection
                 <textarea
                   value={formData.description}
                   onChange={(e) => handleInputChange('description', e.target.value)}
-                  className="input-field w-full h-24 resize-none"
+                  className="input-field w-full h-72 resize-none"
                   placeholder="Enter task description"
                   style={{ padding: '12px', lineHeight: '1.5' }}
                 />
@@ -299,9 +310,19 @@ const TaskModal = ({ isOpen, onClose, projectId, task = null, preSelectedSection
                     value={formData.status}
                     onChange={(e) => handleInputChange('status', e.target.value)}
                     className="input-field w-full"
+                    style={{ 
+                      appearance: 'none',
+                      backgroundImage: 'url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' fill=\'none\' viewBox=\'0 0 20 20\'%3E%3Cpath stroke=\'%236B7280\' stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'1.5\' d=\'M6 8l4 4 4-4\'/%3E%3C/svg%3E")',
+                      backgroundPosition: 'right 8px center',
+                      backgroundRepeat: 'no-repeat',
+                      backgroundSize: '16px',
+                      paddingRight: '32px',
+                      fontSize: '15px !important',
+                      fontWeight: '400 !important'
+                    }}
                   >
                     {taskConfig?.statuses?.map((status) => (
-                      <option key={status.id} value={status.id}>
+                      <option key={status.id} value={status.id} style={{ fontSize: '15px', fontWeight: '400' }}>
                         {status.name}
                       </option>
                     ))}
@@ -317,9 +338,19 @@ const TaskModal = ({ isOpen, onClose, projectId, task = null, preSelectedSection
                     value={formData.priority}
                     onChange={(e) => handleInputChange('priority', e.target.value)}
                     className="input-field w-full"
+                    style={{ 
+                      appearance: 'none',
+                      backgroundImage: 'url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' fill=\'none\' viewBox=\'0 0 20 20\'%3E%3Cpath stroke=\'%236B7280\' stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'1.5\' d=\'M6 8l4 4 4-4\'/%3E%3C/svg%3E")',
+                      backgroundPosition: 'right 8px center',
+                      backgroundRepeat: 'no-repeat',
+                      backgroundSize: '16px',
+                      paddingRight: '32px',
+                      fontSize: '15px !important',
+                      fontWeight: '400 !important'
+                    }}
                   >
                     {taskConfig?.priorities?.map((priority) => (
-                      <option key={priority.id} value={priority.id}>
+                      <option key={priority.id} value={priority.id} style={{ fontSize: '15px', fontWeight: '400' }}>
                         {priority.name}
                       </option>
                     ))}
@@ -335,10 +366,79 @@ const TaskModal = ({ isOpen, onClose, projectId, task = null, preSelectedSection
                     value={formData.section_id}
                     onChange={(e) => handleInputChange('section_id', e.target.value)}
                     className="input-field w-full"
+                    style={{ 
+                      appearance: 'none',
+                      backgroundImage: 'url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' fill=\'none\' viewBox=\'0 0 20 20\'%3E%3Cpath stroke=\'%236B7280\' stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'1.5\' d=\'M6 8l4 4 4-4\'/%3E%3C/svg%3E")',
+                      backgroundPosition: 'right 8px center',
+                      backgroundRepeat: 'no-repeat',
+                      backgroundSize: '16px',
+                      paddingRight: '32px',
+                      fontSize: '15px !important',
+                      fontWeight: '400 !important'
+                    }}
                   >
                     {sections.map((section) => (
-                      <option key={section.id} value={section.id}>
+                      <option key={section.id} value={section.id} style={{ fontSize: '15px', fontWeight: '400' }}>
                         {section.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              {/* Row with Estimation and Health */}
+              <div className="grid grid-cols-2 gap-4">
+                {/* Estimation */}
+                <div>
+                  <label className="block text-body text-primary mb-2">
+                    Estimation
+                  </label>
+                  <select
+                    value={formData.estimation}
+                    onChange={(e) => handleInputChange('estimation', e.target.value)}
+                    className="input-field w-full"
+                    style={{ 
+                      appearance: 'none',
+                      backgroundImage: 'url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' fill=\'none\' viewBox=\'0 0 20 20\'%3E%3Cpath stroke=\'%236B7280\' stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'1.5\' d=\'M6 8l4 4 4-4\'/%3E%3C/svg%3E")',
+                      backgroundPosition: 'right 8px center',
+                      backgroundRepeat: 'no-repeat',
+                      backgroundSize: '16px',
+                      paddingRight: '32px',
+                      fontSize: '15px !important',
+                      fontWeight: '400 !important'
+                    }}
+                  >
+                    {taskConfig?.estimations?.map((estimation) => (
+                      <option key={estimation.id} value={estimation.id} style={{ fontSize: '15px', fontWeight: '400' }}>
+                        {estimation.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Health */}
+                <div>
+                  <label className="block text-body text-primary mb-2">
+                    Health
+                  </label>
+                  <select
+                    value={formData.health}
+                    onChange={(e) => handleInputChange('health', e.target.value)}
+                    className="input-field w-full"
+                    style={{ 
+                      appearance: 'none',
+                      backgroundImage: 'url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' fill=\'none\' viewBox=\'0 0 20 20\'%3E%3Cpath stroke=\'%236B7280\' stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'1.5\' d=\'M6 8l4 4 4-4\'/%3E%3C/svg%3E")',
+                      backgroundPosition: 'right 8px center',
+                      backgroundRepeat: 'no-repeat',
+                      backgroundSize: '16px',
+                      paddingRight: '32px',
+                      fontSize: '15px !important',
+                      fontWeight: '400 !important'
+                    }}
+                  >
+                    {taskConfig?.healths?.map((health) => (
+                      <option key={health.id} value={health.id} style={{ fontSize: '15px', fontWeight: '400' }}>
+                        {health.name}
                       </option>
                     ))}
                   </select>
@@ -391,7 +491,7 @@ const TaskModal = ({ isOpen, onClose, projectId, task = null, preSelectedSection
                 <button
                   onClick={handleSubmit}
                   className="btn-filled focus-visible"
-                  disabled={loading || !formData.title.trim()}
+                  disabled={loading || !formData.summary.trim()}
                 >
                   {loading ? 'Saving...' : isEditing ? 'Update Task' : 'Create Task'}
                 </button>

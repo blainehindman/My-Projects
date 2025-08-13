@@ -103,6 +103,19 @@ const TaskBoard = ({ projectId, onTaskCreated, onTaskUpdated, onTaskDeleted }) =
       { id: 'medium', name: 'Medium', color: '#FF9500', order: 1 },
       { id: 'high', name: 'High', color: '#FF3B30', order: 2 }
     ],
+    estimations: [
+      { id: 'xs', name: 'XS (1-2h)', color: '#34C759', order: 0 },
+      { id: 'small', name: 'Small (3-5h)', color: '#8E8E93', order: 1 },
+      { id: 'medium', name: 'Medium (1d)', color: '#FF9500', order: 2 },
+      { id: 'large', name: 'Large (2-3d)', color: '#FF3B30', order: 3 },
+      { id: 'xl', name: 'XL (1w+)', color: '#AF52DE', order: 4 }
+    ],
+    healths: [
+      { id: 'excellent', name: 'Excellent', color: '#34C759', order: 0 },
+      { id: 'good', name: 'Good', color: '#8E8E93', order: 1 },
+      { id: 'at_risk', name: 'At Risk', color: '#FF9500', order: 2 },
+      { id: 'blocked', name: 'Blocked', color: '#FF3B30', order: 3 }
+    ],
     defaultSection: 'todo'
   })
 
@@ -117,6 +130,18 @@ const TaskBoard = ({ projectId, onTaskCreated, onTaskUpdated, onTaskDeleted }) =
     if (!taskConfig) return { name: priorityId, color: '#8E8E93' }
     const priority = taskConfig.priorities?.find(p => p.id === priorityId)
     return priority || { name: priorityId, color: '#8E8E93' }
+  }
+
+  const getEstimationConfig = (estimationId) => {
+    if (!taskConfig) return { name: estimationId, color: '#8E8E93' }
+    const estimation = taskConfig.estimations?.find(e => e.id === estimationId)
+    return estimation || { name: estimationId, color: '#8E8E93' }
+  }
+
+  const getHealthConfig = (healthId) => {
+    if (!taskConfig) return { name: healthId, color: '#8E8E93' }
+    const health = taskConfig.healths?.find(h => h.id === healthId)
+    return health || { name: healthId, color: '#8E8E93' }
   }
 
   // Group tasks by section
@@ -209,7 +234,7 @@ const TaskBoard = ({ projectId, onTaskCreated, onTaskUpdated, onTaskDeleted }) =
 
 
   // Update task
-  const handleUpdateTask = async (taskId, updates) => {
+  const handleUpdateTask = async (taskId, updates, skipCallback = false) => {
     try {
       const { error } = await supabase
         .from('tasks')
@@ -224,7 +249,8 @@ const TaskBoard = ({ projectId, onTaskCreated, onTaskUpdated, onTaskDeleted }) =
         )
       )
 
-      if (onTaskUpdated) {
+      // Skip callback for drag and drop operations to prevent duplication
+      if (!skipCallback && onTaskUpdated) {
         const updatedTask = tasks.find(t => t.id === taskId)
         if (updatedTask) {
           onTaskUpdated({ ...updatedTask, ...updates })
@@ -311,7 +337,7 @@ const TaskBoard = ({ projectId, onTaskCreated, onTaskUpdated, onTaskDeleted }) =
         updates.completed_at = null
       }
 
-      await handleUpdateTask(draggedTask.id, updates)
+      await handleUpdateTask(draggedTask.id, updates, true) // Skip callback to prevent duplication
     } catch (err) {
       console.error('Error moving task:', err)
       alert('Failed to move task')
@@ -391,7 +417,7 @@ const TaskBoard = ({ projectId, onTaskCreated, onTaskUpdated, onTaskDeleted }) =
               <div className="flex items-center space-x-2">
                 <div
                   className="w-3 h-3 rounded-full"
-                  style={{ backgroundColor: '#007AFF' }}
+                  style={{ backgroundColor: section.color || '#007AFF' }}
                 />
                 <h3 className="text-footnote font-medium text-primary">
                   {section.name}
@@ -410,6 +436,7 @@ const TaskBoard = ({ projectId, onTaskCreated, onTaskUpdated, onTaskDeleted }) =
                   key={task.id}
                   task={task}
                   taskConfig={taskConfig}
+                  section={section}
                   onDragStart={handleDragStart}
                   onClick={() => handleTaskClick(task)}
                   onQuickUpdate={handleUpdateTask}
@@ -453,6 +480,7 @@ const TaskBoard = ({ projectId, onTaskCreated, onTaskUpdated, onTaskDeleted }) =
           }}
           task={selectedTask}
           taskConfig={taskConfig}
+          sections={sections}
           onTaskUpdated={handleTaskUpdateFromModal}
           onTaskDeleted={(taskId) => {
             handleDeleteTask(taskId)

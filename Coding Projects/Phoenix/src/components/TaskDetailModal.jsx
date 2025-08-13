@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../contexts/AuthContext'
 
-const TaskDetailModal = ({ isOpen, onClose, task, taskConfig, onTaskUpdated, onTaskDeleted }) => {
+const TaskDetailModal = ({ isOpen, onClose, task, taskConfig, sections, onTaskUpdated, onTaskDeleted }) => {
   const { user, activeProject } = useAuth()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -11,6 +11,8 @@ const TaskDetailModal = ({ isOpen, onClose, task, taskConfig, onTaskUpdated, onT
     description: '',
     status: 'todo',
     priority: 'medium',
+    estimation: 'medium',
+    health: 'good',
     assignee: '',
     due_date: '',
     tags: []
@@ -18,7 +20,7 @@ const TaskDetailModal = ({ isOpen, onClose, task, taskConfig, onTaskUpdated, onT
   const [comments, setComments] = useState([])
   const [newComment, setNewComment] = useState('')
   const [projectUsers, setProjectUsers] = useState([])
-  const [sections, setSections] = useState([])
+  const [localSections, setLocalSections] = useState([])
   const [commentLoading, setCommentLoading] = useState(false)
 
   // Initialize form data
@@ -29,13 +31,15 @@ const TaskDetailModal = ({ isOpen, onClose, task, taskConfig, onTaskUpdated, onT
         description: task.description || '',
         status: task.status || 'todo',
         priority: task.priority || 'medium',
+        estimation: task.estimation || 'medium',
+        health: task.health || 'good',
         assignee: task.assignee || '',
         due_date: task.due_date || '',
         tags: task.tags || []
       })
       fetchComments()
       fetchProjectUsers()
-      fetchSections()
+      // Use sections prop instead of fetching
     }
   }, [isOpen, task])
 
@@ -97,7 +101,7 @@ const TaskDetailModal = ({ isOpen, onClose, task, taskConfig, onTaskUpdated, onT
         .order('sort_order', { ascending: true })
 
       if (error) throw error
-      setSections(data || [])
+      setLocalSections(data || [])
     } catch (err) {
       console.error('Error fetching sections:', err)
     }
@@ -290,7 +294,7 @@ const TaskDetailModal = ({ isOpen, onClose, task, taskConfig, onTaskUpdated, onT
               <div className="flex items-center space-x-3">
                 <div 
                   className="w-6 h-6 rounded-full" 
-                  style={{ backgroundColor: taskConfig?.statuses?.find(s => s.id === formData.status)?.color || '#8E8E93' }}
+                  style={{ backgroundColor: sections?.find(s => s.id === task?.section_id)?.color || '#8E8E93' }}
                 />
                 <h2 className="text-title-2 text-primary font-medium">
                   Task Details
@@ -520,6 +524,55 @@ const TaskDetailModal = ({ isOpen, onClose, task, taskConfig, onTaskUpdated, onT
                         <option value="low">Low</option>
                         <option value="medium">Medium</option>
                         <option value="high">High</option>
+                      </>
+                    )}
+                  </select>
+                </div>
+
+                {/* Estimation */}
+                <div className="form-group">
+                  <label className="input-label">
+                    Estimation
+                  </label>
+                  <select
+                    value={formData.estimation}
+                    onChange={(e) => handleChange('estimation', e.target.value)}
+                    className="input-field"
+                    disabled={loading}
+                  >
+                    {taskConfig?.estimations?.map(estimation => (
+                      <option key={estimation.id} value={estimation.id}>{estimation.name}</option>
+                    )) || (
+                      <>
+                        <option value="xs">XS (1-2h)</option>
+                        <option value="small">Small (3-5h)</option>
+                        <option value="medium">Medium (1d)</option>
+                        <option value="large">Large (2-3d)</option>
+                        <option value="xl">XL (1w+)</option>
+                      </>
+                    )}
+                  </select>
+                </div>
+
+                {/* Health */}
+                <div className="form-group">
+                  <label className="input-label">
+                    Health
+                  </label>
+                  <select
+                    value={formData.health}
+                    onChange={(e) => handleChange('health', e.target.value)}
+                    className="input-field"
+                    disabled={loading}
+                  >
+                    {taskConfig?.healths?.map(health => (
+                      <option key={health.id} value={health.id}>{health.name}</option>
+                    )) || (
+                      <>
+                        <option value="excellent">Excellent</option>
+                        <option value="good">Good</option>
+                        <option value="at_risk">At Risk</option>
+                        <option value="blocked">Blocked</option>
                       </>
                     )}
                   </select>
