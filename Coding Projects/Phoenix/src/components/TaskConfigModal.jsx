@@ -6,6 +6,7 @@ const TaskConfigModal = ({ isOpen, onClose, projectId, onConfigUpdated }) => {
   const { user } = useAuth()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [activeTab, setActiveTab] = useState('workflow')
   const [config, setConfig] = useState({
     statuses: [],
     priorities: [],
@@ -14,6 +15,40 @@ const TaskConfigModal = ({ isOpen, onClose, projectId, onConfigUpdated }) => {
     sections: []
   })
   const [sections, setSections] = useState([])
+
+  // Tab configuration
+  const tabs = [
+    { 
+      id: 'workflow', 
+      name: 'Workflow', 
+      icon: (
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+        </svg>
+      ), 
+      description: 'Statuses & Priorities'
+    },
+    { 
+      id: 'planning', 
+      name: 'Planning', 
+      icon: (
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+      ), 
+      description: 'Estimations & Health'
+    },
+    { 
+      id: 'structure', 
+      name: 'Structure', 
+      icon: (
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14-7H5m14 14H5" />
+        </svg>
+      ), 
+      description: 'Board Sections'
+    }
+  ]
 
   // Load current configuration
   useEffect(() => {
@@ -338,6 +373,396 @@ const TaskConfigModal = ({ isOpen, onClose, projectId, onConfigUpdated }) => {
     }
   }
 
+  // Render tab content based on active tab
+  const renderTabContent = () => {
+    switch (activeTab) {
+      case 'workflow':
+        return (
+          <div className="space-y-8">
+            {/* Statuses Section */}
+            <div>
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-title-3 text-primary">Task Statuses</h3>
+                <button
+                  onClick={handleAddStatus}
+                  className="btn-tinted btn-compact focus-visible"
+                >
+                  <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                  </svg>
+                  Add Status
+                </button>
+              </div>
+              
+              <div className="space-y-4">
+                {config.statuses.map((status, index) => (
+                  <div key={`${status.id}-${index}`} className="bg-gray-50 rounded-lg p-4">
+                    <div className="grid grid-cols-12 gap-4 items-center">
+                      {/* Color Picker */}
+                      <div className="col-span-1">
+                        <input
+                          type="color"
+                          value={status.color}
+                          onChange={(e) => handleUpdateStatus(index, 'color', e.target.value)}
+                          className="w-10 h-10 rounded-lg border-2 border-gray-300 cursor-pointer"
+                          title="Choose color"
+                        />
+                      </div>
+                      
+                      {/* Name Input */}
+                      <div className="col-span-5">
+                        <label className="block text-caption-1 text-tertiary mb-1">Name</label>
+                        <input
+                          type="text"
+                          value={status.name}
+                          onChange={(e) => handleUpdateStatus(index, 'name', e.target.value)}
+                          className="input-field w-full"
+                          placeholder="Status name"
+                        />
+                      </div>
+                      
+                      {/* ID Input */}
+                      <div className="col-span-5">
+                        <label className="block text-caption-1 text-tertiary mb-1">ID (no spaces)</label>
+                        <input
+                          type="text"
+                          value={status.id}
+                          onChange={(e) => {
+                            // Remove spaces and special characters for clean IDs
+                            const cleanId = e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, '')
+                            handleUpdateStatus(index, 'id', cleanId)
+                          }}
+                          className="input-field w-full"
+                          placeholder="status_id"
+                        />
+                      </div>
+                      
+                      {/* Delete Button */}
+                      <div className="col-span-1">
+                        <button
+                          onClick={() => handleDeleteStatus(index)}
+                          className="btn-plain btn-compact text-red-600 hover:bg-red-50 focus-visible"
+                          disabled={config.statuses.length <= 1}
+                          title="Delete status"
+                        >
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                          </svg>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Priorities Section */}
+            <div>
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-title-3 text-primary">Task Priorities</h3>
+                <button
+                  onClick={handleAddPriority}
+                  className="btn-tinted btn-compact focus-visible"
+                >
+                  <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                  </svg>
+                  Add Priority
+                </button>
+              </div>
+              
+              <div className="space-y-4">
+                {config.priorities.map((priority, index) => (
+                  <div key={`${priority.id}-${index}`} className="bg-gray-50 rounded-lg p-4">
+                    <div className="grid grid-cols-12 gap-4 items-center">
+                      {/* Color Picker */}
+                      <div className="col-span-1">
+                        <input
+                          type="color"
+                          value={priority.color}
+                          onChange={(e) => handleUpdatePriority(index, 'color', e.target.value)}
+                          className="w-10 h-10 rounded-lg border-2 border-gray-300 cursor-pointer"
+                          title="Choose color"
+                        />
+                      </div>
+                      
+                      {/* Name Input */}
+                      <div className="col-span-5">
+                        <label className="block text-caption-1 text-tertiary mb-1">Name</label>
+                        <input
+                          type="text"
+                          value={priority.name}
+                          onChange={(e) => handleUpdatePriority(index, 'name', e.target.value)}
+                          className="input-field w-full"
+                          placeholder="Priority name"
+                        />
+                      </div>
+                      
+                      {/* ID Input */}
+                      <div className="col-span-5">
+                        <label className="block text-caption-1 text-tertiary mb-1">ID (no spaces)</label>
+                        <input
+                          type="text"
+                          value={priority.id}
+                          onChange={(e) => {
+                            // Remove spaces and special characters for clean IDs
+                            const cleanId = e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, '')
+                            handleUpdatePriority(index, 'id', cleanId)
+                          }}
+                          className="input-field w-full"
+                          placeholder="priority_id"
+                        />
+                      </div>
+                      
+                      {/* Delete Button */}
+                      <div className="col-span-1">
+                        <button
+                          onClick={() => handleDeletePriority(index)}
+                          className="btn-plain btn-compact text-red-600 hover:bg-red-50 focus-visible"
+                          disabled={config.priorities.length <= 1}
+                          title="Delete priority"
+                        >
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                          </svg>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        );
+
+      case 'planning':
+        return (
+          <div className="space-y-8">
+            {/* Estimations Section */}
+            <div>
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-title-3 text-primary">Task Estimations</h3>
+                <button
+                  onClick={handleAddEstimation}
+                  className="btn-tinted btn-compact focus-visible"
+                >
+                  <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                  </svg>
+                  Add Estimation
+                </button>
+              </div>
+              
+              <div className="space-y-4">
+                {config.estimations.map((estimation, index) => (
+                  <div key={`${estimation.id}-${index}`} className="bg-gray-50 rounded-lg p-4">
+                    <div className="grid grid-cols-12 gap-4 items-center">
+                      {/* Color Picker */}
+                      <div className="col-span-1">
+                        <input
+                          type="color"
+                          value={estimation.color}
+                          onChange={(e) => handleUpdateEstimation(index, 'color', e.target.value)}
+                          className="w-10 h-10 rounded-lg border-2 border-gray-300 cursor-pointer"
+                          title="Choose color"
+                        />
+                      </div>
+                      
+                      {/* Name Input */}
+                      <div className="col-span-5">
+                        <label className="block text-caption-1 text-tertiary mb-1">Name</label>
+                        <input
+                          type="text"
+                          value={estimation.name}
+                          onChange={(e) => handleUpdateEstimation(index, 'name', e.target.value)}
+                          className="input-field w-full"
+                          placeholder="Estimation name"
+                        />
+                      </div>
+                      
+                      {/* ID Input */}
+                      <div className="col-span-5">
+                        <label className="block text-caption-1 text-tertiary mb-1">ID (no spaces)</label>
+                        <input
+                          type="text"
+                          value={estimation.id}
+                          onChange={(e) => {
+                            const cleanId = e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, '')
+                            handleUpdateEstimation(index, 'id', cleanId)
+                          }}
+                          className="input-field w-full"
+                          placeholder="estimation_id"
+                        />
+                      </div>
+                      
+                      {/* Delete Button */}
+                      <div className="col-span-1">
+                        <button
+                          onClick={() => handleDeleteEstimation(index)}
+                          className="btn-plain btn-compact text-red-600 hover:bg-red-50 focus-visible"
+                          disabled={config.estimations.length <= 1}
+                          title="Delete estimation"
+                        >
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                          </svg>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Health Section */}
+            <div>
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-title-3 text-primary">Task Health</h3>
+                <button
+                  onClick={handleAddHealth}
+                  className="btn-tinted btn-compact focus-visible"
+                >
+                  <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                  </svg>
+                  Add Health Status
+                </button>
+              </div>
+              
+              <div className="space-y-4">
+                {config.healths.map((health, index) => (
+                  <div key={`${health.id}-${index}`} className="bg-gray-50 rounded-lg p-4">
+                    <div className="grid grid-cols-12 gap-4 items-center">
+                      {/* Color Picker */}
+                      <div className="col-span-1">
+                        <input
+                          type="color"
+                          value={health.color}
+                          onChange={(e) => handleUpdateHealth(index, 'color', e.target.value)}
+                          className="w-10 h-10 rounded-lg border-2 border-gray-300 cursor-pointer"
+                          title="Choose color"
+                        />
+                      </div>
+                      
+                      {/* Name Input */}
+                      <div className="col-span-5">
+                        <label className="block text-caption-1 text-tertiary mb-1">Name</label>
+                        <input
+                          type="text"
+                          value={health.name}
+                          onChange={(e) => handleUpdateHealth(index, 'name', e.target.value)}
+                          className="input-field w-full"
+                          placeholder="Health status name"
+                        />
+                      </div>
+                      
+                      {/* ID Input */}
+                      <div className="col-span-5">
+                        <label className="block text-caption-1 text-tertiary mb-1">ID (no spaces)</label>
+                        <input
+                          type="text"
+                          value={health.id}
+                          onChange={(e) => {
+                            const cleanId = e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, '')
+                            handleUpdateHealth(index, 'id', cleanId)
+                          }}
+                          className="input-field w-full"
+                          placeholder="health_id"
+                        />
+                      </div>
+                      
+                      {/* Delete Button */}
+                      <div className="col-span-1">
+                        <button
+                          onClick={() => handleDeleteHealth(index)}
+                          className="btn-plain btn-compact text-red-600 hover:bg-red-50 focus-visible"
+                          disabled={config.healths.length <= 1}
+                          title="Delete health status"
+                        >
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                          </svg>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        );
+
+      case 'structure':
+        return (
+          <div className="space-y-8">
+            {/* Sections Section */}
+            <div>
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-title-3 text-primary">Task Sections</h3>
+                <button
+                  onClick={handleAddSection}
+                  className="btn-tinted btn-compact focus-visible"
+                >
+                  <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                  </svg>
+                  Add Section
+                </button>
+              </div>
+              
+              <div className="space-y-4">
+                {sections.map((section, index) => (
+                  <div key={`section-${section.id || index}`} className="bg-gray-50 rounded-lg p-4">
+                    <div className="grid grid-cols-12 gap-4 items-center">
+                      {/* Color Picker */}
+                      <div className="col-span-1">
+                        <input
+                          type="color"
+                          value={section.color || '#007AFF'}
+                          onChange={(e) => handleUpdateSection(index, 'color', e.target.value)}
+                          className="w-10 h-10 rounded-lg border-2 border-gray-300 cursor-pointer"
+                          title="Choose color"
+                        />
+                      </div>
+                      
+                      {/* Name Input */}
+                      <div className="col-span-10">
+                        <label className="block text-caption-1 text-tertiary mb-1">Section Name</label>
+                        <input
+                          type="text"
+                          value={section.name}
+                          onChange={(e) => handleUpdateSection(index, 'name', e.target.value)}
+                          className="input-field w-full"
+                          placeholder="Section name"
+                        />
+                      </div>
+                      
+                      {/* Delete Button */}
+                      <div className="col-span-1">
+                        <button
+                          onClick={() => handleDeleteSection(index)}
+                          className="btn-plain btn-compact text-red-600 hover:bg-red-50 focus-visible"
+                          disabled={sections.length <= 1}
+                          title="Delete section"
+                        >
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                          </svg>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        );
+
+      default:
+        return <div>Tab not found</div>;
+    }
+  }
+
   // Handle escape key
   useEffect(() => {
     const handleEscape = (event) => {
@@ -393,10 +818,47 @@ const TaskConfigModal = ({ isOpen, onClose, projectId, onConfigUpdated }) => {
               </button>
             </div>
 
+            {/* Tab Navigation */}
+            <div className="border-b border-gray-200">
+              <nav className="flex space-x-8 px-6" aria-label="Tabs">
+                {tabs.map((tab) => (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id)}
+                    className={`${
+                      activeTab === tab.id
+                        ? ''
+                        : 'border-transparent text-gray-500 hover:border-gray-300'
+                    } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors duration-200 flex items-center space-x-2`}
+                    style={activeTab === tab.id ? { 
+                      borderBottomColor: '#ff2765', 
+                      color: '#ff2765' 
+                    } : {}}
+                    onMouseEnter={(e) => {
+                      if (activeTab !== tab.id) {
+                        e.target.closest('button').style.color = 'rgba(255, 39, 101, 0.7)'
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (activeTab !== tab.id) {
+                        e.target.closest('button').style.color = ''
+                      }
+                    }}
+                  >
+                    {tab.icon}
+                    <div className="text-left">
+                      <div>{tab.name}</div>
+                      <div className="text-xs opacity-60">{tab.description}</div>
+                    </div>
+                  </button>
+                ))}
+              </nav>
+            </div>
+
             {/* Content */}
-            <div className="p-6 space-y-8 max-h-96 overflow-y-auto">
+            <div className="p-6">
               {error && (
-                <div style={{
+                <div className="mb-6" style={{
                   backgroundColor: 'rgba(255, 59, 48, 0.1)',
                   padding: 'var(--spacing-3)',
                   borderRadius: 'var(--radius)',
@@ -408,372 +870,8 @@ const TaskConfigModal = ({ isOpen, onClose, projectId, onConfigUpdated }) => {
                 </div>
               )}
 
-              {/* Statuses Section */}
-              <div>
-                <div className="flex items-center justify-between mb-6">
-                  <h3 className="text-title-3 text-primary">Task Statuses</h3>
-                  <button
-                    onClick={handleAddStatus}
-                    className="btn-tinted btn-compact focus-visible"
-                  >
-                    <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                    </svg>
-                    Add Status
-                  </button>
-                </div>
-                
-                <div className="space-y-4">
-                  {config.statuses.map((status, index) => (
-                    <div key={`${status.id}-${index}`} className="bg-gray-50 rounded-lg p-4">
-                      <div className="grid grid-cols-12 gap-4 items-center">
-                        {/* Color Picker */}
-                        <div className="col-span-1">
-                          <input
-                            type="color"
-                            value={status.color}
-                            onChange={(e) => handleUpdateStatus(index, 'color', e.target.value)}
-                            className="w-10 h-10 rounded-lg border-2 border-gray-300 cursor-pointer"
-                            title="Choose color"
-                          />
-                        </div>
-                        
-                        {/* Name Input */}
-                        <div className="col-span-5">
-                          <label className="block text-caption-1 text-tertiary mb-1">Name</label>
-                          <input
-                            type="text"
-                            value={status.name}
-                            onChange={(e) => handleUpdateStatus(index, 'name', e.target.value)}
-                            className="input-field w-full"
-                            placeholder="Status name"
-                          />
-                        </div>
-                        
-                        {/* ID Input */}
-                        <div className="col-span-5">
-                          <label className="block text-caption-1 text-tertiary mb-1">ID (no spaces)</label>
-                          <input
-                            type="text"
-                            value={status.id}
-                            onChange={(e) => {
-                              // Remove spaces and special characters for clean IDs
-                              const cleanId = e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, '')
-                              handleUpdateStatus(index, 'id', cleanId)
-                            }}
-                            className="input-field w-full"
-                            placeholder="status_id"
-                          />
-                        </div>
-                        
-                        {/* Delete Button */}
-                        <div className="col-span-1">
-                          <button
-                            onClick={() => handleDeleteStatus(index)}
-                            className="btn-plain btn-compact text-red-600 hover:bg-red-50 focus-visible"
-                            disabled={config.statuses.length <= 1}
-                            title="Delete status"
-                          >
-                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                            </svg>
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Priorities Section */}
-              <div>
-                <div className="flex items-center justify-between mb-6">
-                  <h3 className="text-title-3 text-primary">Task Priorities</h3>
-                  <button
-                    onClick={handleAddPriority}
-                    className="btn-tinted btn-compact focus-visible"
-                  >
-                    <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                    </svg>
-                    Add Priority
-                  </button>
-                </div>
-                
-                <div className="space-y-4">
-                  {config.priorities.map((priority, index) => (
-                    <div key={`${priority.id}-${index}`} className="bg-gray-50 rounded-lg p-4">
-                      <div className="grid grid-cols-12 gap-4 items-center">
-                        {/* Color Picker */}
-                        <div className="col-span-1">
-                          <input
-                            type="color"
-                            value={priority.color}
-                            onChange={(e) => handleUpdatePriority(index, 'color', e.target.value)}
-                            className="w-10 h-10 rounded-lg border-2 border-gray-300 cursor-pointer"
-                            title="Choose color"
-                          />
-                        </div>
-                        
-                        {/* Name Input */}
-                        <div className="col-span-5">
-                          <label className="block text-caption-1 text-tertiary mb-1">Name</label>
-                          <input
-                            type="text"
-                            value={priority.name}
-                            onChange={(e) => handleUpdatePriority(index, 'name', e.target.value)}
-                            className="input-field w-full"
-                            placeholder="Priority name"
-                          />
-                        </div>
-                        
-                        {/* ID Input */}
-                        <div className="col-span-5">
-                          <label className="block text-caption-1 text-tertiary mb-1">ID (no spaces)</label>
-                          <input
-                            type="text"
-                            value={priority.id}
-                            onChange={(e) => {
-                              // Remove spaces and special characters for clean IDs
-                              const cleanId = e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, '')
-                              handleUpdatePriority(index, 'id', cleanId)
-                            }}
-                            className="input-field w-full"
-                            placeholder="priority_id"
-                          />
-                        </div>
-                        
-                        {/* Delete Button */}
-                        <div className="col-span-1">
-                          <button
-                            onClick={() => handleDeletePriority(index)}
-                            className="btn-plain btn-compact text-red-600 hover:bg-red-50 focus-visible"
-                            disabled={config.priorities.length <= 1}
-                            title="Delete priority"
-                          >
-                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                            </svg>
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Estimations Section */}
-              <div>
-                <div className="flex items-center justify-between mb-6">
-                  <h3 className="text-title-3 text-primary">Task Estimations</h3>
-                  <button
-                    onClick={handleAddEstimation}
-                    className="btn-tinted btn-compact focus-visible"
-                  >
-                    <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                    </svg>
-                    Add Estimation
-                  </button>
-                </div>
-                
-                <div className="space-y-4">
-                  {config.estimations.map((estimation, index) => (
-                    <div key={`${estimation.id}-${index}`} className="bg-gray-50 rounded-lg p-4">
-                      <div className="grid grid-cols-12 gap-4 items-center">
-                        {/* Color Picker */}
-                        <div className="col-span-1">
-                          <input
-                            type="color"
-                            value={estimation.color}
-                            onChange={(e) => handleUpdateEstimation(index, 'color', e.target.value)}
-                            className="w-10 h-10 rounded-lg border-2 border-gray-300 cursor-pointer"
-                            title="Choose color"
-                          />
-                        </div>
-                        
-                        {/* Name Input */}
-                        <div className="col-span-5">
-                          <label className="block text-caption-1 text-tertiary mb-1">Name</label>
-                          <input
-                            type="text"
-                            value={estimation.name}
-                            onChange={(e) => handleUpdateEstimation(index, 'name', e.target.value)}
-                            className="input-field w-full"
-                            placeholder="Estimation name"
-                          />
-                        </div>
-                        
-                        {/* ID Input */}
-                        <div className="col-span-5">
-                          <label className="block text-caption-1 text-tertiary mb-1">ID (no spaces)</label>
-                          <input
-                            type="text"
-                            value={estimation.id}
-                            onChange={(e) => {
-                              const cleanId = e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, '')
-                              handleUpdateEstimation(index, 'id', cleanId)
-                            }}
-                            className="input-field w-full"
-                            placeholder="estimation_id"
-                          />
-                        </div>
-                        
-                        {/* Delete Button */}
-                        <div className="col-span-1">
-                          <button
-                            onClick={() => handleDeleteEstimation(index)}
-                            className="btn-plain btn-compact text-red-600 hover:bg-red-50 focus-visible"
-                            disabled={config.estimations.length <= 1}
-                            title="Delete estimation"
-                          >
-                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                            </svg>
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Health Section */}
-              <div>
-                <div className="flex items-center justify-between mb-6">
-                  <h3 className="text-title-3 text-primary">Task Health</h3>
-                  <button
-                    onClick={handleAddHealth}
-                    className="btn-tinted btn-compact focus-visible"
-                  >
-                    <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                    </svg>
-                    Add Health Status
-                  </button>
-                </div>
-                
-                <div className="space-y-4">
-                  {config.healths.map((health, index) => (
-                    <div key={`${health.id}-${index}`} className="bg-gray-50 rounded-lg p-4">
-                      <div className="grid grid-cols-12 gap-4 items-center">
-                        {/* Color Picker */}
-                        <div className="col-span-1">
-                          <input
-                            type="color"
-                            value={health.color}
-                            onChange={(e) => handleUpdateHealth(index, 'color', e.target.value)}
-                            className="w-10 h-10 rounded-lg border-2 border-gray-300 cursor-pointer"
-                            title="Choose color"
-                          />
-                        </div>
-                        
-                        {/* Name Input */}
-                        <div className="col-span-5">
-                          <label className="block text-caption-1 text-tertiary mb-1">Name</label>
-                          <input
-                            type="text"
-                            value={health.name}
-                            onChange={(e) => handleUpdateHealth(index, 'name', e.target.value)}
-                            className="input-field w-full"
-                            placeholder="Health status name"
-                          />
-                        </div>
-                        
-                        {/* ID Input */}
-                        <div className="col-span-5">
-                          <label className="block text-caption-1 text-tertiary mb-1">ID (no spaces)</label>
-                          <input
-                            type="text"
-                            value={health.id}
-                            onChange={(e) => {
-                              const cleanId = e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, '')
-                              handleUpdateHealth(index, 'id', cleanId)
-                            }}
-                            className="input-field w-full"
-                            placeholder="health_id"
-                          />
-                        </div>
-                        
-                        {/* Delete Button */}
-                        <div className="col-span-1">
-                          <button
-                            onClick={() => handleDeleteHealth(index)}
-                            className="btn-plain btn-compact text-red-600 hover:bg-red-50 focus-visible"
-                            disabled={config.healths.length <= 1}
-                            title="Delete health status"
-                          >
-                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                            </svg>
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Sections Section */}
-              <div>
-                <div className="flex items-center justify-between mb-6">
-                  <h3 className="text-title-3 text-primary">Task Sections</h3>
-                  <button
-                    onClick={handleAddSection}
-                    className="btn-tinted btn-compact focus-visible"
-                  >
-                    <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                    </svg>
-                    Add Section
-                  </button>
-                </div>
-                
-                <div className="space-y-4">
-                  {sections.map((section, index) => (
-                    <div key={`section-${section.id || index}`} className="bg-gray-50 rounded-lg p-4">
-                      <div className="grid grid-cols-12 gap-4 items-center">
-                        {/* Color Picker */}
-                        <div className="col-span-1">
-                          <input
-                            type="color"
-                            value={section.color || '#007AFF'}
-                            onChange={(e) => handleUpdateSection(index, 'color', e.target.value)}
-                            className="w-10 h-10 rounded-lg border-2 border-gray-300 cursor-pointer"
-                            title="Choose color"
-                          />
-                        </div>
-                        
-                        {/* Name Input */}
-                        <div className="col-span-10">
-                          <label className="block text-caption-1 text-tertiary mb-1">Section Name</label>
-                          <input
-                            type="text"
-                            value={section.name}
-                            onChange={(e) => handleUpdateSection(index, 'name', e.target.value)}
-                            className="input-field w-full"
-                            placeholder="Section name"
-                          />
-                        </div>
-                        
-                        {/* Delete Button */}
-                        <div className="col-span-1">
-                          <button
-                            onClick={() => handleDeleteSection(index)}
-                            className="btn-plain btn-compact text-red-600 hover:bg-red-50 focus-visible"
-                            disabled={sections.length <= 1}
-                            title="Delete section"
-                          >
-                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                            </svg>
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
+              {/* Tab Content */}
+              <div className="max-h-96 overflow-y-auto">{renderTabContent()}</div>
             </div>
 
             {/* Footer */}
