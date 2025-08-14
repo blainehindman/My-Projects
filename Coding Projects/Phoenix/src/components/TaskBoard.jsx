@@ -4,6 +4,7 @@ import { useAuth } from '../contexts/AuthContext'
 import TaskCard from './TaskCard'
 import TaskDetailModal from './TaskDetailModal'
 import TaskConfigModal from './TaskConfigModal'
+import BoardLayoutSelector from './BoardLayoutSelector'
 import DropdownMenu, { DropdownItem } from './DropdownMenu'
 
 const TaskBoard = ({ projectId, onTaskCreated, onTaskUpdated, onTaskDeleted }) => {
@@ -19,6 +20,7 @@ const TaskBoard = ({ projectId, onTaskCreated, onTaskUpdated, onTaskDeleted }) =
 
   const [taskConfig, setTaskConfig] = useState(null)
   const [isConfigModalOpen, setIsConfigModalOpen] = useState(false)
+  const [boardLayout, setBoardLayout] = useState('sections')
   const dragCounter = useRef(0)
 
   // Fetch sections and tasks
@@ -149,6 +151,86 @@ const TaskBoard = ({ projectId, onTaskCreated, onTaskUpdated, onTaskDeleted }) =
     return tasks
       .filter(task => task.section_id === sectionId)
       .sort((a, b) => a.sort_order - b.sort_order)
+  }
+
+  // Get dynamic columns based on current layout
+  const getDynamicColumns = () => {
+    switch (boardLayout) {
+      case 'sections':
+        return sections.map(section => ({
+          id: section.id,
+          name: section.name,
+          color: section.color || '#007AFF',
+          type: 'section'
+        }))
+      
+      case 'statuses':
+        return (taskConfig?.statuses || []).map(status => ({
+          id: status.id,
+          name: status.name,
+          color: status.color,
+          type: 'status'
+        }))
+      
+      case 'priorities':
+        return (taskConfig?.priorities || []).map(priority => ({
+          id: priority.id,
+          name: priority.name,
+          color: priority.color,
+          type: 'priority'
+        }))
+      
+      case 'estimations':
+        return (taskConfig?.estimations || []).map(estimation => ({
+          id: estimation.id,
+          name: estimation.name,
+          color: estimation.color,
+          type: 'estimation'
+        }))
+      
+      case 'healths':
+        return (taskConfig?.healths || []).map(health => ({
+          id: health.id,
+          name: health.name,
+          color: health.color,
+          type: 'health'
+        }))
+      
+      default:
+        return sections.map(section => ({
+          id: section.id,
+          name: section.name,
+          color: section.color || '#007AFF',
+          type: 'section'
+        }))
+    }
+  }
+
+  // Group tasks by current layout
+  const getTasksByColumn = (columnId, columnType) => {
+    let filteredTasks = []
+    
+    switch (columnType) {
+      case 'section':
+        filteredTasks = tasks.filter(task => task.section_id === columnId)
+        break
+      case 'status':
+        filteredTasks = tasks.filter(task => task.status === columnId)
+        break
+      case 'priority':
+        filteredTasks = tasks.filter(task => task.priority === columnId)
+        break
+      case 'estimation':
+        filteredTasks = tasks.filter(task => task.estimation === columnId)
+        break
+      case 'health':
+        filteredTasks = tasks.filter(task => task.health === columnId)
+        break
+      default:
+        filteredTasks = tasks.filter(task => task.section_id === columnId)
+    }
+    
+    return filteredTasks.sort((a, b) => a.sort_order - b.sort_order)
   }
 
   // Create new section
@@ -306,35 +388,80 @@ const TaskBoard = ({ projectId, onTaskCreated, onTaskUpdated, onTaskDeleted }) =
     }
   }
 
-  const handleDrop = async (e, targetSectionId) => {
+  const handleDrop = async (e, targetColumnId, targetColumnType) => {
     e.preventDefault()
     dragCounter.current = 0
     setDraggedOverSection(null)
 
-    if (!draggedTask || draggedTask.section_id === targetSectionId) {
+    if (!draggedTask) {
+      setDraggedTask(null)
+      return
+    }
+
+    // Check if the task is already in the target column
+    let isSameColumn = false
+    switch (targetColumnType) {
+      case 'section':
+        isSameColumn = draggedTask.section_id === targetColumnId
+        break
+      case 'status':
+        isSameColumn = draggedTask.status === targetColumnId
+        break
+      case 'priority':
+        isSameColumn = draggedTask.priority === targetColumnId
+        break
+      case 'estimation':
+        isSameColumn = draggedTask.estimation === targetColumnId
+        break
+      case 'health':
+        isSameColumn = draggedTask.health === targetColumnId
+        break
+      default:
+        isSameColumn = draggedTask.section_id === targetColumnId
+    }
+
+    if (isSameColumn) {
       setDraggedTask(null)
       return
     }
 
     try {
-      // Get tasks in target section to calculate new sort order
-      const targetSectionTasks = getTasksBySection(targetSectionId)
-      const maxSortOrder = Math.max(0, ...targetSectionTasks.map(t => t.sort_order))
+      // Get tasks in target column to calculate new sort order
+      const targetColumnTasks = getTasksByColumn(targetColumnId, targetColumnType)
+      const maxSortOrder = Math.max(0, ...targetColumnTasks.map(t => t.sort_order))
 
-      // Update task's section and sort order
+      // Prepare updates based on column type
       const updates = {
-        section_id: targetSectionId,
         sort_order: maxSortOrder + 1
       }
 
-      // If moving to "Done" section, mark as completed
-      const targetSection = sections.find(s => s.id === targetSectionId)
-      if (targetSection?.name.toLowerCase() === 'done') {
-        updates.status = 'completed'
-        updates.completed_at = new Date().toISOString()
-      } else {
-        updates.status = 'todo'
-        updates.completed_at = null
+      switch (targetColumnType) {
+        case 'section':
+          updates.section_id = targetColumnId
+          // If moving to "Done" section, mark as completed
+          const targetSection = sections.find(s => s.id === targetColumnId)
+          if (targetSection?.name.toLowerCase() === 'done') {
+            updates.status = 'completed'
+            updates.completed_at = new Date().toISOString()
+          }
+          break
+        case 'status':
+          updates.status = targetColumnId
+          if (targetColumnId === 'completed') {
+            updates.completed_at = new Date().toISOString()
+          } else {
+            updates.completed_at = null
+          }
+          break
+        case 'priority':
+          updates.priority = targetColumnId
+          break
+        case 'estimation':
+          updates.estimation = targetColumnId
+          break
+        case 'health':
+          updates.health = targetColumnId
+          break
       }
 
       await handleUpdateTask(draggedTask.id, updates, true) // Skip callback to prevent duplication
@@ -398,45 +525,60 @@ const TaskBoard = ({ projectId, onTaskCreated, onTaskUpdated, onTaskDeleted }) =
     )
   }
 
+  const dynamicColumns = getDynamicColumns()
+
   return (
     <>
+      {/* Board Layout Selector */}
+      <div className="flex items-center justify-between mb-6">
+        <BoardLayoutSelector
+          currentLayout={boardLayout}
+          onLayoutChange={setBoardLayout}
+          taskConfig={taskConfig}
+        />
+        <div className="text-sm text-gray-500">
+          {dynamicColumns.length} {boardLayout === 'sections' ? 'sections' : `${boardLayout} options`}
+        </div>
+      </div>
+
       <div className="flex space-x-6 overflow-x-auto pb-6 task-board-scroll">
-        {sections.map((section) => (
+        {dynamicColumns.map((column) => (
           <div
-            key={section.id}
+            key={`${column.type}-${column.id}`}
             className={`flex-shrink-0 w-80 ${
-              draggedOverSection === section.id ? 'ring-2 ring-blue-400 ring-opacity-50' : ''
+              draggedOverSection === column.id ? 'ring-2 ring-blue-400 ring-opacity-50' : ''
             }`}
             onDragOver={handleDragOver}
-            onDragEnter={(e) => handleDragEnter(e, section.id)}
+            onDragEnter={(e) => handleDragEnter(e, column.id)}
             onDragLeave={handleDragLeave}
-            onDrop={(e) => handleDrop(e, section.id)}
+            onDrop={(e) => handleDrop(e, column.id, column.type)}
           >
-            {/* Section Header */}
+            {/* Column Header */}
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center space-x-2">
                 <div
                   className="w-3 h-3 rounded-full"
-                  style={{ backgroundColor: section.color || '#007AFF' }}
+                  style={{ backgroundColor: column.color || '#007AFF' }}
                 />
                 <h3 className="text-footnote font-medium text-primary">
-                  {section.name}
+                  {column.name}
                 </h3>
                 <span className="text-caption-2 text-tertiary">
-                  {getTasksBySection(section.id).length}
+                  {getTasksByColumn(column.id, column.type).length}
                 </span>
               </div>
-
             </div>
 
             {/* Tasks */}
             <div className="space-y-3 min-h-24">
-              {getTasksBySection(section.id).map((task) => (
+              {getTasksByColumn(column.id, column.type).map((task) => (
                 <TaskCard
                   key={task.id}
                   task={task}
                   taskConfig={taskConfig}
-                  section={section}
+                  section={sections.find(s => s.id === task.section_id)}
+                  boardLayout={boardLayout}
+                  currentColumn={column}
                   onDragStart={handleDragStart}
                   onClick={() => handleTaskClick(task)}
                   onQuickUpdate={handleUpdateTask}
@@ -447,10 +589,18 @@ const TaskBoard = ({ projectId, onTaskCreated, onTaskUpdated, onTaskDeleted }) =
               {/* Add task button */}
               <button
                 onClick={() => {
-                  // Trigger the new task modal with this section pre-selected
-                  const newTaskEvent = new CustomEvent('openNewTaskModal', { 
-                    detail: { sectionId: section.id }
-                  })
+                  // Trigger the new task modal with appropriate defaults based on current layout
+                  const detail = {}
+                  
+                  if (boardLayout === 'sections') {
+                    detail.sectionId = column.id
+                  } else {
+                    // For other layouts, set the appropriate field and use first section as default
+                    detail.sectionId = sections[0]?.id
+                    detail[boardLayout.slice(0, -1)] = column.id // Remove 's' from end (e.g., statuses -> status)
+                  }
+                  
+                  const newTaskEvent = new CustomEvent('openNewTaskModal', { detail })
                   document.dispatchEvent(newTaskEvent)
                 }}
                 className="w-full p-3 border-2 border-dashed border-gray-300 rounded-lg text-tertiary hover:border-blue-400 hover:text-blue-600 transition-colors"
@@ -462,12 +612,9 @@ const TaskBoard = ({ projectId, onTaskCreated, onTaskUpdated, onTaskDeleted }) =
                   Add task
                 </div>
               </button>
-
             </div>
           </div>
         ))}
-
-
       </div>
 
       {/* Task Detail Modal */}

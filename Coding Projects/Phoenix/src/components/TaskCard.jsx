@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react'
 import DropdownMenu, { DropdownItem } from './DropdownMenu'
 
-const TaskCard = ({ task, taskConfig, section, onDragStart, onClick, onQuickUpdate, onDelete }) => {
+const TaskCard = ({ task, taskConfig, section, boardLayout, currentColumn, onDragStart, onClick, onQuickUpdate, onDelete }) => {
   const [isEditing, setIsEditing] = useState(null) // 'summary' or 'description'
   const [editValue, setEditValue] = useState('')
   const inputRef = useRef(null)
@@ -70,6 +70,28 @@ const TaskCard = ({ task, taskConfig, section, onDragStart, onClick, onQuickUpda
     return health || { name: healthId, color: '#8E8E93' }
   }
 
+  // Get top border color based on current board layout
+  const getTopBorderColor = () => {
+    if (!boardLayout || !currentColumn) {
+      return section?.color || '#8E8E93'
+    }
+
+    switch (boardLayout) {
+      case 'sections':
+        return section?.color || '#8E8E93'
+      case 'statuses':
+        return getStatusConfig(task.status).color
+      case 'priorities':
+        return getPriorityConfig(task.priority).color
+      case 'estimations':
+        return getEstimationConfig(task.estimation).color
+      case 'healths':
+        return getHealthConfig(task.health).color
+      default:
+        return section?.color || '#8E8E93'
+    }
+  }
+
   // Format date
   const formatDate = (dateString) => {
     if (!dateString) return null
@@ -124,10 +146,10 @@ const TaskCard = ({ task, taskConfig, section, onDragStart, onClick, onQuickUpda
         e.currentTarget.style.borderColor = 'rgba(0, 0, 0, 0.06)'
       }}
     >
-      {/* Section Color Bar */}
+      {/* Dynamic Color Bar */}
       <div 
         className="absolute top-0 left-0 right-0 h-0.5"
-        style={{ backgroundColor: section?.color || '#8E8E93' }}
+        style={{ backgroundColor: getTopBorderColor() }}
       />
 
       {/* Header with Actions */}
