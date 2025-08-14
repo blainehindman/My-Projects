@@ -3,6 +3,7 @@ import { useAuth } from '../contexts/AuthContext'
 import { useParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import TaskTable from '../components/TaskTable'
+import DynamicTaskTable from '../components/DynamicTaskTable'
 import TaskBoard from '../components/TaskBoard'
 import TaskModal from '../components/TaskModal'
 
@@ -124,16 +125,25 @@ const ProjectTasks = () => {
     }
   }, [activeProject])
 
-  // Listen for new task modal events from TaskBoard
+  // Listen for new task modal events from TaskBoard and DynamicTaskTable
   useEffect(() => {
     const handleNewTaskEvent = (event) => {
       const sectionId = event.detail?.sectionId
       handleNewTask(sectionId)
     }
 
+    const handleEditTaskEvent = (event) => {
+      const task = event.detail?.task
+      if (task) {
+        handleEditTask(task)
+      }
+    }
+
     document.addEventListener('openNewTaskModal', handleNewTaskEvent)
+    document.addEventListener('editTask', handleEditTaskEvent)
     return () => {
       document.removeEventListener('openNewTaskModal', handleNewTaskEvent)
+      document.removeEventListener('editTask', handleEditTaskEvent)
     }
   }, [])
 
@@ -285,12 +295,13 @@ const ProjectTasks = () => {
             }}
           />
         ) : (
-          <TaskTable
-            tasks={tasks}
-            onEditTask={handleEditTask}
-            onDeleteTask={handleDeleteTask}
-            loading={loading}
+          <DynamicTaskTable
+            projectId={activeProject.id}
+            onTaskCreated={handleTaskSaved}
             onTaskUpdated={handleTaskSaved}
+            onTaskDeleted={(taskId) => {
+              setTasks(prev => prev.filter(t => t.id !== taskId))
+            }}
           />
         )}
 
